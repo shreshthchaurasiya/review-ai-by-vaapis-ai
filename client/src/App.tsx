@@ -6,12 +6,18 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 
 import { ReviewaiLanding } from "@/pages/ReviewaiLanding";
+import MerchantDashboard from "@/pages/MerchantDashboard";
+import BusinessSettingsQr from "@/pages/BusinessSettingsQr";
+import CustomerRatingView from "@/pages/CustomerRatingView";
 
 function Router() {
   return (
     <Switch>
       {/* Add pages below */}
       <Route path="/" component={ReviewaiLanding} />
+      <Route path="/dashboard" component={MerchantDashboard} />
+      <Route path="/business" component={BusinessSettingsQr} />
+      <Route path="/rate" component={CustomerRatingView} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
