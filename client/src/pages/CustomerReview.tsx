@@ -58,7 +58,7 @@ export default function CustomerReview() {
   const generateMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/generate-review", {
-        businessName: business!.name,
+        businessName: business!.name || business!.publicSlug || "this business",
         category: business!.category,
         rating,
         experience,

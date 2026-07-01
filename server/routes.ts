@@ -179,17 +179,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/generate-review", async (req, res) => {
     const { businessName, category, rating, experience, employeeName } = req.body;
-    if (!businessName || !rating) return res.status(400).json({ message: "businessName and rating are required" });
+    if (!rating) return res.status(400).json({ message: "rating is required" });
+    const resolvedName = businessName || "this business";
 
     const openai = getOpenAI();
     if (!openai) {
       return res.json({
-        review: `Had a wonderful experience at ${businessName}. The staff were attentive and the quality was excellent. Will definitely be coming back soon!`,
+        review: `Had a wonderful experience at ${resolvedName}. The staff were attentive and the quality was excellent. Will definitely be coming back soon!`,
       });
     }
 
     const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
-    const prompt = `Business Name: ${businessName}
+    const prompt = `Business Name: ${resolvedName}
 Business Type: ${category || "local business"}
 Star Rating: ${rating}/5 ${stars}
 Customer Experience: ${experience || "No additional comments provided."}
@@ -198,7 +199,7 @@ Staff Name: ${employeeName || "Not provided."}
 Write ONE authentic Google review that sounds like it was written naturally by a real customer.
 
 Rules:
-- The review MUST naturally mention the business name "${businessName}" at least once.
+- The review MUST naturally mention the business name "${resolvedName}" at least once.
 - Base the review primarily on the star rating.
 - If the customer wrote additional comments, use them naturally in the review.
 - If the customer didn't write anything, create a believable review based only on the star rating and business type.
