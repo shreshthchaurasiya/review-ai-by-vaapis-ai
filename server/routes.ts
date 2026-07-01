@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import bcrypt from "bcryptjs";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import QRCode from "qrcode";
 import pg from "pg";
 import { storage } from "./storage";
@@ -18,9 +18,9 @@ declare module "express-session" {
   }
 }
 
-function getOpenAI() {
+function getGemini() {
   if (!process.env.OPENAI_API_KEY) return null;
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return new GoogleGenerativeAI(process.env.OPENAI_API_KEY);
 }
 
 function slugify(name: string): string {
@@ -182,15 +182,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (!rating) return res.status(400).json({ message: "rating is required" });
     const resolvedName = businessName || "this business";
 
-    const openai = getOpenAI();
-    if (!openai) {
+    const gemini = getGemini();
+    if (!gemini) {
       return res.json({
         review: `Had a wonderful experience at ${resolvedName}. The staff were attentive and the quality was excellent. Will definitely be coming back soon!`,
       });
     }
 
     const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
-    const prompt = `Business Name: ${resolvedName}
+    const prompt = `You are an expert review writing assistant. Write natural Google reviews that sound like genuine customers. Never mention AI. Never sound robotic.
+
+Business Name: ${resolvedName}
 Business Type: ${category || "local business"}
 Star Rating: ${rating}/5 ${stars}
 Customer Experience: ${experience || "No additional comments provided."}
@@ -214,17 +216,9 @@ Rules:
 - Use proper grammar and punctuation.
 - Return ONLY the review text without quotation marks, titles, or explanations.`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are an expert review writing assistant. Write natural Google reviews that sound like genuine customers. Never mention AI. Never sound robotic." },
-        { role: "user", content: prompt },
-      ],
-      max_tokens: 200,
-      temperature: 0.9,
-    });
-
-    const review = completion.choices[0].message.content?.trim() || "";
+    const model = gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const review = result.response.text().trim();
     res.json({ review });
   });
 
