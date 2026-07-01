@@ -216,7 +216,10 @@ Rules:
 - Use proper grammar and punctuation.
 - Return ONLY the review text without quotation marks, titles, or explanations.`;
 
-    const model = gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = gemini.getGenerativeModel(
+      { model: "gemini-2.5-flash" },
+      { apiVersion: "v1" }
+    );
     const result = await model.generateContent(prompt);
     const review = result.response.text().trim();
     res.json({ review });
