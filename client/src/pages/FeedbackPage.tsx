@@ -22,9 +22,9 @@ export default function FeedbackPage() {
 
   return (
     <MerchantLayout>
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#ECECF2] px-8 h-16 flex items-center justify-between">
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-[#ECECF2] px-4 md:px-8 h-14 md:h-16 flex items-center justify-between">
         <h1 className="text-sm font-semibold text-[#111827]">Feedback</h1>
-        <div className="flex gap-3 text-xs text-[#6B7280]">
+        <div className="flex gap-2 text-xs">
           <span className="bg-[#F0FDF4] text-[#16A34A] px-2.5 py-1 rounded-full font-medium">
             {publicReviews.length} public
           </span>
@@ -34,8 +34,9 @@ export default function FeedbackPage() {
         </div>
       </div>
 
-      <main className="flex-1 px-8 py-8">
+      <main className="flex-1 px-4 md:px-8 py-5 md:py-8">
         <div className="max-w-3xl mx-auto space-y-6">
+
           {/* Public Reviews */}
           {publicReviews.length > 0 && (
             <div>
@@ -45,27 +46,23 @@ export default function FeedbackPage() {
               </h2>
               <div className="bg-white rounded-2xl border border-[#ECECF2] shadow-sm divide-y divide-[#ECECF2]">
                 {publicReviews.map(item => (
-                  <div key={item.id} className="px-6 py-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <StarRow rating={item.rating} />
-                          <span className="text-xs text-[#9CA3AF]">
-                            {new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                          </span>
-                          {item.generatedReview && (
-                            <span className="text-xs bg-[#F5F3FF] text-[#6D28D9] px-2 py-0.5 rounded-full font-medium">AI</span>
-                          )}
-                        </div>
-                        {item.generatedReview ? (
-                          <p className="text-sm text-[#111827] leading-relaxed">{item.generatedReview}</p>
-                        ) : item.feedbackText ? (
-                          <p className="text-sm text-[#111827] leading-relaxed">{item.feedbackText}</p>
-                        ) : (
-                          <p className="text-sm text-[#9CA3AF] italic">No comment provided</p>
-                        )}
-                      </div>
+                  <div key={item.id} className="px-4 md:px-6 py-4 md:py-5">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <StarRow rating={item.rating} />
+                      <span className="text-xs text-[#9CA3AF]">
+                        {new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </span>
+                      {item.generatedReview && (
+                        <span className="text-xs bg-[#F5F3FF] text-[#6D28D9] px-2 py-0.5 rounded-full font-medium">AI</span>
+                      )}
                     </div>
+                    {item.generatedReview ? (
+                      <p className="text-sm text-[#111827] leading-relaxed">{item.generatedReview}</p>
+                    ) : item.feedbackText ? (
+                      <p className="text-sm text-[#111827] leading-relaxed">{item.feedbackText}</p>
+                    ) : (
+                      <p className="text-sm text-[#9CA3AF] italic">No comment provided</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -81,11 +78,11 @@ export default function FeedbackPage() {
               </h2>
               <div className="bg-white rounded-2xl border border-[#ECECF2] shadow-sm divide-y divide-[#ECECF2]">
                 {privateReviews.map(item => (
-                  <div key={item.id} className="px-6 py-5">
-                    <div className="flex items-start gap-4">
+                  <div key={item.id} className="px-4 md:px-6 py-4 md:py-5">
+                    <div className="flex items-start gap-3">
                       <div className="shrink-0 w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 text-xs font-bold">{item.rating}</div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <StarRow rating={item.rating} />
                           <span className="text-xs text-[#9CA3AF]">
                             {new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
@@ -106,7 +103,7 @@ export default function FeedbackPage() {
 
           {/* Empty State */}
           {!isLoading && feedbackList.length === 0 && (
-            <div className="bg-white rounded-2xl border border-[#ECECF2] shadow-sm px-8 py-16 text-center">
+            <div className="bg-white rounded-2xl border border-[#ECECF2] shadow-sm px-6 py-14 text-center">
               <MessageSquare size={40} className="text-[#ECECF2] mx-auto mb-4" />
               <h3 className="text-base font-semibold text-[#111827] mb-1">No feedback yet</h3>
               <p className="text-sm text-[#6B7280] max-w-sm mx-auto">Share your QR code or review link with customers to start collecting feedback.</p>
@@ -115,7 +112,7 @@ export default function FeedbackPage() {
         </div>
       </main>
 
-      <footer className="px-8 py-4 border-t border-[#ECECF2]">
+      <footer className="px-4 md:px-8 py-4 border-t border-[#ECECF2]">
         <p className="text-center text-xs text-[#9CA3AF] tracking-wide uppercase">Powered by Adshree Inc.</p>
       </footer>
     </MerchantLayout>

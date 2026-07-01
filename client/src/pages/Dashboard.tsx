@@ -1,29 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
-import { Users, Star, Sparkles, MessageSquare, TrendingUp, TrendingDown } from "lucide-react";
+import { Users, Star, Sparkles, MessageSquare } from "lucide-react";
 import MerchantLayout from "@/components/MerchantLayout";
 import { useAuth } from "@/hooks/use-auth";
 import type { Feedback, Business } from "@shared/schema";
 
 function StatCard({
-  label, value, icon: Icon, iconBg, badge, badgeUp,
+  label, value, icon: Icon, iconBg,
 }: {
   label: string; value: string | number; icon: any; iconBg: string;
-  badge?: string; badgeUp?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-[#ECECF2] p-6 shadow-sm">
-      <div className="flex items-start justify-between mb-4">
+    <div className="bg-white rounded-2xl border border-[#ECECF2] p-4 md:p-6 shadow-sm">
+      <div className="flex items-start justify-between mb-3 md:mb-4">
         <div className={`${iconBg} p-2.5 rounded-xl`}>
           <Icon size={18} strokeWidth={1.8} className="text-inherit" />
         </div>
-        {badge && (
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeUp ? "bg-green-50 text-[#16A34A]" : "bg-red-50 text-red-600"}`}>
-            {badge}
-          </span>
-        )}
       </div>
       <div className="text-2xl font-bold text-[#111827] leading-tight">{value}</div>
-      <div className="text-xs text-[#6B7280] mt-1 font-medium tracking-wide uppercase">{label}</div>
+      <div className="text-[10px] md:text-xs text-[#6B7280] mt-1 font-medium tracking-wide uppercase">{label}</div>
     </div>
   );
 }
@@ -76,14 +70,14 @@ export default function Dashboard() {
   return (
     <MerchantLayout>
       {/* Top Bar */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#ECECF2] px-8 h-16 flex items-center">
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-[#ECECF2] px-4 md:px-8 h-14 md:h-16 flex items-center">
         <h1 className="text-sm font-semibold text-[#111827]">Dashboard</h1>
       </div>
 
-      <main className="flex-1 px-8 py-8 space-y-8">
+      <main className="flex-1 px-4 md:px-8 py-5 md:py-8 space-y-5 md:space-y-8">
         {/* Welcome */}
         <div>
-          <h2 className="text-2xl font-bold text-[#111827]">
+          <h2 className="text-xl md:text-2xl font-bold text-[#111827]">
             {getGreeting()},{" "}
             <span className="text-[#6D28D9]">{business?.name || user?.email?.split("@")[0] || "there"}</span>
           </h2>
@@ -91,7 +85,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3 md:gap-4">
           <StatCard
             label="Customers Rated"
             value={stats?.totalRatings ?? 0}
@@ -105,7 +99,7 @@ export default function Dashboard() {
             iconBg="bg-amber-50 text-amber-500"
           />
           <StatCard
-            label="AI Reviews Generated"
+            label="AI Reviews"
             value={stats?.aiReviewsGenerated ?? 0}
             icon={Sparkles}
             iconBg="bg-[#F0FDF4] text-[#16A34A]"
@@ -119,21 +113,21 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Feedback + Rating Distribution */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Recent Feedback */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-[#ECECF2] shadow-sm">
-            <div className="px-6 py-4 border-b border-[#ECECF2]">
+            <div className="px-4 md:px-6 py-4 border-b border-[#ECECF2]">
               <h3 className="text-sm font-semibold text-[#111827]">Recent Feedback</h3>
             </div>
             {recentFeedback.length === 0 ? (
-              <div className="px-6 py-12 text-center">
+              <div className="px-6 py-10 text-center">
                 <MessageSquare size={32} className="text-[#ECECF2] mx-auto mb-3" />
                 <p className="text-sm text-[#6B7280]">No feedback yet. Share your QR code to get started!</p>
               </div>
             ) : (
               <div className="divide-y divide-[#ECECF2]">
                 {recentFeedback.map((item) => (
-                  <div key={item.id} className="px-6 py-4 flex items-start gap-4">
+                  <div key={item.id} className="px-4 md:px-6 py-4 flex items-start gap-3">
                     <div className={`mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                       item.rating >= 4 ? "bg-[#F0FDF4] text-[#16A34A]" : "bg-orange-50 text-orange-600"
                     }`}>
@@ -143,10 +137,10 @@ export default function Dashboard() {
                       <p className="text-sm text-[#111827] line-clamp-2">
                         {item.generatedReview || item.feedbackText || <span className="text-[#9CA3AF] italic">No comment</span>}
                       </p>
-                      <p className="text-xs text-[#9CA3AF] mt-1">
+                      <p className="text-xs text-[#9CA3AF] mt-1 flex flex-wrap gap-1.5">
                         {new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        {item.rating <= 3 && <span className="ml-2 text-orange-500 font-medium">Private</span>}
-                        {item.generatedReview && <span className="ml-2 text-[#6D28D9] font-medium">AI Generated</span>}
+                        {item.rating <= 3 && <span className="text-orange-500 font-medium">· Private</span>}
+                        {item.generatedReview && <span className="text-[#6D28D9] font-medium">· AI</span>}
                       </p>
                     </div>
                   </div>
@@ -157,10 +151,10 @@ export default function Dashboard() {
 
           {/* Rating Distribution */}
           <div className="bg-white rounded-2xl border border-[#ECECF2] shadow-sm">
-            <div className="px-6 py-4 border-b border-[#ECECF2]">
+            <div className="px-4 md:px-6 py-4 border-b border-[#ECECF2]">
               <h3 className="text-sm font-semibold text-[#111827]">Rating Distribution</h3>
             </div>
-            <div className="px-6 py-6 space-y-3">
+            <div className="px-4 md:px-6 py-5 space-y-3">
               {ratingDist.map(({ stars, count }) => (
                 <RatingBar key={stars} stars={stars} count={count} total={stats?.totalRatings ?? 0} />
               ))}
@@ -172,8 +166,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="px-8 py-4 border-t border-[#ECECF2]">
+      <footer className="px-4 md:px-8 py-4 border-t border-[#ECECF2]">
         <p className="text-center text-xs text-[#9CA3AF] tracking-wide uppercase">Powered by Adshree Inc.</p>
       </footer>
     </MerchantLayout>
