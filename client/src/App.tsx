@@ -1,24 +1,57 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 
 import { ReviewaiLanding } from "@/pages/ReviewaiLanding";
-import MerchantDashboard from "@/pages/MerchantDashboard";
-import BusinessSettingsQr from "@/pages/BusinessSettingsQr";
-import CustomerRatingView from "@/pages/CustomerRatingView";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import Dashboard from "@/pages/Dashboard";
+import BusinessPage from "@/pages/BusinessPage";
+import FeedbackPage from "@/pages/FeedbackPage";
+import CustomerReview from "@/pages/CustomerReview";
+import NotFound from "@/pages/not-found";
+
+function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFC]">
+        <Loader2 className="animate-spin text-[#6D28D9]" size={28} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Redirect to="/login" />;
+  }
+
+  return <Component />;
+}
 
 function Router() {
   return (
     <Switch>
-      {/* Add pages below */}
       <Route path="/" component={ReviewaiLanding} />
-      <Route path="/dashboard" component={MerchantDashboard} />
-      <Route path="/business" component={BusinessSettingsQr} />
-      <Route path="/rate" component={CustomerRatingView} />
-      {/* Fallback to 404 */}
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
+      <Route path="/dashboard">
+        {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/business">
+        {() => <ProtectedRoute component={BusinessPage} />}
+      </Route>
+      <Route path="/feedback">
+        {() => <ProtectedRoute component={FeedbackPage} />}
+      </Route>
+      <Route path="/settings">
+        {() => <ProtectedRoute component={BusinessPage} />}
+      </Route>
+      <Route path="/r/:slug" component={CustomerReview} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -28,8 +61,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <AuthProvider>
+          <Toaster />
+          <Router />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

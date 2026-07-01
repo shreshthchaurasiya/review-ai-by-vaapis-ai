@@ -1,0 +1,524 @@
+# ReviewAI by Adshree
+## Product Requirements (MVP)
+
+You are a senior full-stack engineer and product designer.
+
+Build a beautiful, premium, production-ready MVP called **ReviewAI by Adshree**.
+
+The objective is NOT to build a complete SaaS.
+
+The objective is to build an MVP that works flawlessly.
+
+The UI should feel like Stripe, Linear, Notion and Vercel.
+
+Avoid anything that looks AI-generated or like a cheap admin template.
+
+--------------------------------------------------
+
+## PRODUCT
+
+Name:
+ReviewAI
+
+Brand:
+by Adshree
+
+Tagline:
+
+Turn Happy Customers Into Google Reviews.
+
+Purpose:
+
+Help local businesses collect authentic Google reviews using AI.
+
+--------------------------------------------------
+
+## DESIGN
+
+Theme
+
+Premium
+
+Minimal
+
+Modern
+
+Elegant
+
+Professional
+
+Lots of whitespace
+
+Rounded corners
+
+Soft shadows
+
+No gradients everywhere
+
+No unnecessary animations
+
+--------------------------------------------------
+
+## COLORS
+
+Primary Purple
+
+#6D28D9
+
+Light Purple
+
+#A855F7
+
+Background
+
+#FAFAFC
+
+Card
+
+White
+
+Text
+
+#111827
+
+Secondary Text
+
+#6B7280
+
+Border
+
+#ECECF2
+
+Success
+
+#16A34A
+
+--------------------------------------------------
+
+## FONT
+
+Google Font
+
+Poppins
+
+Use professional typography.
+
+--------------------------------------------------
+
+## TECH STACK
+
+React
+
+TypeScript
+
+TailwindCSS
+
+Supabase (Database + Auth)
+
+OpenAI API
+
+QRCode library
+
+Lucide Icons
+
+Responsive Design
+
+--------------------------------------------------
+
+## AUTH
+
+Simple Email Login
+
+Email Signup
+
+No payment
+
+No subscriptions
+
+No Google login
+
+--------------------------------------------------
+
+# DATABASE
+
+Business
+
+-id
+
+-name
+
+-category
+
+-logo
+
+-googleReviewUrl
+
+-createdAt
+
+Feedback
+
+-id
+
+-businessId
+
+-rating
+
+-feedback
+
+-generatedReview
+
+-createdAt
+
+--------------------------------------------------
+
+# LANDING PAGE
+
+Hero
+
+Headline
+
+Turn Happy Customers Into Google Reviews.
+
+Subheading
+
+Generate authentic AI-powered review drafts that customers can edit and post on Google in seconds.
+
+Buttons
+
+Get Started
+
+View Demo
+
+Sections
+
+How it Works
+
+Features
+
+FAQ
+
+Footer
+
+Powered by Adshree Inc.
+
+--------------------------------------------------
+
+# MERCHANT DASHBOARD
+
+Simple Left Sidebar
+
+Dashboard
+
+Business
+
+Feedback
+
+Settings
+
+Logout
+
+Dashboard Cards
+
+Customers Rated
+
+Average Rating
+
+AI Reviews Generated
+
+Private Feedback
+
+Business Page
+
+Business Name
+
+Category
+
+Business Logo
+
+Google Review URL
+
+Save Button
+
+--------------------------------------------------
+
+# CUSTOMER FLOW
+
+Merchant generates one public review page.
+
+Customer opens page.
+
+Step 1
+
+Business Logo
+
+Business Name
+
+Heading
+
+How was your experience today?
+
+Subtext
+
+Your feedback helps us improve and supports local businesses.
+
+write small text "Adshree Inc."
+
+Show
+
+★★★★★
+
+--------------------------------------------------
+
+If rating is 4 or 5
+
+Show
+
+Field 1
+
+What did you enjoy most?
+
+Required
+
+Textarea
+
+Field 2
+
+Who helped you today?
+
+Optional
+
+Generate Review Button
+
+--------------------------------------------------
+
+While AI generates
+
+Beautiful loading spinner
+
+Message
+
+Creating your personalized review...
+
+--------------------------------------------------
+
+Then show
+
+Heading
+
+Your Review Draft
+
+Textarea
+
+Editable review
+
+Buttons
+
+Regenerate
+
+Copy Review
+
+Post on Google
+
+When Post on Google is clicked
+
+Automatically copy review if browser allows.
+
+Open Google Review URL in new tab.
+
+--------------------------------------------------
+
+If rating is 1
+
+2
+
+or 3
+
+Show
+
+We're sorry your experience wasn't perfect.
+
+Textarea
+
+Tell us what happened...
+
+Button
+
+Send Private Feedback
+
+Store feedback in database.
+
+Show
+
+Thank you for helping us improve.
+
+--------------------------------------------------
+
+# OPENAI
+
+Connect OpenAI API securely using environment variables.
+
+Environment Variable
+
+OPENAI_API_KEY
+
+Never expose the API key.
+
+--------------------------------------------------
+
+# AI PROMPT
+
+System Prompt
+
+You are an expert review writing assistant.
+
+Write natural Google reviews that sound like genuine customers.
+
+Rules
+
+Never sound robotic.
+
+Never mention AI.
+
+Never overuse words like amazing or outstanding.
+
+Vary sentence structure every time.
+
+Use simple human language.
+
+Mention employee name only if provided.
+
+Length
+
+50-100 words.
+
+Return only the review.
+
+--------------------------------------------------
+
+Business Name:
+{{business}}
+
+Business Type:
+{{category}}
+
+Star Rating:
+{{stars}}
+
+Customer Experience (Optional):
+{{experience}}
+
+Staff Name (Optional):
+{{employee}}
+
+Write ONE authentic Google review that sounds like it was written naturally by a real customer.
+
+Rules:
+
+- The review MUST naturally mention the business name "{{business}}" at least once.
+- Base the review primarily on the star rating.
+- If the customer wrote additional comments, use them naturally in the review.
+- If the customer didn't write anything, create a believable review based only on the star rating and business type.
+- If a staff name is provided, mention it naturally. If not provided, never invent a person's name.
+- Never fabricate specific experiences that the customer did not provide (for example, don't mention a particular dish, treatment, or product unless the customer mentioned it or it's generic enough to fit the business type).
+- Keep the tone human, conversational, and trustworthy.
+- Every generation should have different wording and sentence structure.
+- Never sound robotic or AI-generated.
+- Avoid clichés like "I highly recommend this place" in every response.
+- Do not overuse words like amazing, outstanding, excellent, perfect, or fantastic.
+- Keep the review between 40 and 100 words.
+- Use proper grammar and punctuation.
+- Return ONLY the review text without quotation marks, titles, or explanations.
+
+Examples:
+
+★★★★★ with no text
+→ Generate a warm, believable positive review mentioning {{business}}.
+
+★★★★★ with "Friendly staff and quick service"
+→ Write around those points and mention {{business}} naturally.
+
+★★★★☆ with no text
+→ Write a positive review with a small neutral observation so it feels authentic.
+
+★★★★☆ with "Very clean clinic"
+→ Expand naturally around cleanliness and professionalism while mentioning {{business}}.
+
+--------------------------------------------------
+
+# UX
+
+Everything should take under 30 seconds.
+
+Customer should never feel confused.
+
+Every button should have loading state.
+
+Every form should have validation.
+
+--------------------------------------------------
+
+# SETTINGS
+
+Business Name
+
+Business Logo
+
+Google Review URL
+
+Save Button
+
+--------------------------------------------------
+
+# FOOTER
+
+Every page should contain
+
+Powered by Adshree Inc.
+
+Very small text
+
+Centered
+
+Professional
+
+--------------------------------------------------
+
+# IMPORTANT
+
+Keep code modular.
+
+Keep components reusable.
+
+Keep folder structure clean.
+
+Do NOT overbuild.
+
+No unnecessary features.
+
+No charts.
+
+No payment system.
+
+No agency dashboard.
+
+No notifications.
+
+No multi-location support.
+
+No analytics graphs.
+
+Focus on making this one workflow extremely polished:
+
+Merchant enters business details →
+Customer scans QR →
+Rates experience →
+AI generates personalized review →
+Customer edits →
+Copies →
+Opens Google Review →
+Posts review.
+
+This flow must work flawlessly.
+
+Prioritize design quality, clean architecture, responsiveness, and a premium user experience over adding extra features.
+Take inspiration from figma 
