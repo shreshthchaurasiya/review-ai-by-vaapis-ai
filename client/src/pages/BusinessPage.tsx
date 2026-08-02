@@ -21,15 +21,25 @@ export default function BusinessPage() {
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [googleReviewUrl, setGoogleReviewUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (business) {
-      setName(business.name);
-      setCategory(business.category);
-      setGoogleReviewUrl(business.googleReviewUrl);
+      setName(business.name || "");
+      if (business.category && CATEGORIES.includes(business.category)) {
+        setCategory(business.category);
+        setCustomCategory("");
+      } else if (business.category) {
+        setCategory("Other");
+        setCustomCategory(business.category);
+      } else {
+        setCategory("");
+        setCustomCategory("");
+      }
+      setGoogleReviewUrl(business.googleReviewUrl || "");
     }
   }, [business]);
 
@@ -48,7 +58,12 @@ export default function BusinessPage() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { toast({ title: "Business name is required", variant: "destructive" }); return; }
-    updateMutation.mutate({ name, category, googleReviewUrl });
+    
+    const finalCategory = category === "Other" && customCategory.trim() 
+      ? customCategory.trim() 
+      : category;
+      
+    updateMutation.mutate({ name, category: finalCategory, googleReviewUrl });
   };
 
   const copyLink = () => {
@@ -168,6 +183,19 @@ export default function BusinessPage() {
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
+
+              {category === "Other" && (
+                <div>
+                  <label className="block text-sm font-medium text-[#111827] mb-1.5">Custom Category</label>
+                  <input
+                    type="text"
+                    value={customCategory}
+                    onChange={e => setCustomCategory(e.target.value)}
+                    placeholder="e.g. Automobile, Hospital, Tech Support"
+                    className="w-full px-4 py-3 rounded-xl border border-[#ECECF2] bg-[#FAFAFC] text-[#111827] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#6D28D9]/20 focus:border-[#6D28D9] transition-colors"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-[#111827] mb-1.5">Google Review URL</label>
