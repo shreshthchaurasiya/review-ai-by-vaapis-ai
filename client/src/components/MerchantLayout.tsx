@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@/hooks/use-firestore";
 import {
   LayoutDashboard, Building2, MessageSquare, Settings, LogOut
 } from "lucide-react";

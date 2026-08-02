@@ -1,13 +1,16 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
-
-interface AuthUser {
-  id: string;
-  email: string;
-}
+import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut,
+  User as FirebaseUser
+} from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 interface AuthContextType {
-  user: AuthUser | null;
+  user: FirebaseUser | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
@@ -17,32 +20,41 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => setUser(data?.user ?? null))
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await apiRequest("POST", "/api/auth/login", { email, password });
-    const data = await res.json();
-    setUser(data.user);
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signup = async (email: string, password: string) => {
-    const res = await apiRequest("POST", "/api/auth/signup", { email, password });
-    const data = await res.json();
-    setUser(data.user);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      // Create an empty business profile for this new user
+      const businessRef = doc(db, "businesses", user.uid);
+      await setDoc(businessRef, {
+        ownerId: user.uid,
+        name: "",
+        category: "",
+        googleReviewUrl: "",
+        logo: ""
+      });
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
   };
 
   const logout = async () => {
-    await apiRequest("POST", "/api/auth/logout");
-    setUser(null);
+    await signOut(auth);
   };
 
   return (

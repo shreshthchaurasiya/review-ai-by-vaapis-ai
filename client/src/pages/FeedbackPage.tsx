@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@/hooks/use-firestore";
 import { MessageSquare, Star } from "lucide-react";
 import MerchantLayout from "@/components/MerchantLayout";
-import type { Feedback } from "@shared/schema";
+import type { Feedback } from "@/lib/types";
 
 function StarRow({ rating }: { rating: number }) {
   return (

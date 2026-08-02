@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@/hooks/use-firestore";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Copy, ExternalLink, QrCode, Check } from "lucide-react";
 import MerchantLayout from "@/components/MerchantLayout";
-import type { Business } from "@shared/schema";
+import type { Business } from "@/lib/types";
 
 const CATEGORIES = [
   "Cafe / Coffee Shop", "Restaurant", "Bar / Pub", "Retail Store",

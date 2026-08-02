@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@/hooks/use-firestore";
 import { Users, Star, Sparkles, MessageSquare } from "lucide-react";
 import MerchantLayout from "@/components/MerchantLayout";
 import { useAuth } from "@/hooks/use-auth";
-import type { Feedback, Business } from "@shared/schema";
+import type { Feedback, Business } from "@/lib/types";
 
 function StatCard({
   label, value, icon: Icon, iconBg,

@@ -1,0 +1,13 @@
+[1G[0K⠙[1G[0K
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K⠙[1G[0K8:33:45 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+8:33:51 PM [express] GET /api/auth/me 304 in 25ms :: {"user":{"id":"36536c7c-8fee-4e2f-8195-a17adbf45763","email":"aashishpanjiyar20@gmail.com"}}
+8:58:09 PM [express] GET /api/auth/me 304 in 20ms :: {"user":{"id":"36536c7c-8fee-4e2f-8195-a17adbf45763","email":"aashishpanjiyar20@gmail.com"}}
+8:58:10 PM [express] GET /api/feedback 304 in 20ms :: [{"id":"ad316b31-4da2-4dde-a539-a5d55b5e6025","businessId":"224301be-60c1-4edc-b997-8d49c1a84969","rating":4,"feedbackText":"","generatedReview":"My recent visit to shreedhan bites was quite enjoyable. They've got a really nice environment inside, very comfortable and welcoming. The staff were all super friendly too, which always makes a difference. It's a solid spot for sure, and I left feeling pretty happy with the experience. Definitely worth a stop if you're looking for a good bite.","createdAt":"2026-07-08T18:03:53.163Z"},{"id":"e9f50c49-e9b1-460a-a117-fbc68ff6470b","businessId":"224301be-60c1-4edc-b997-8d49c1a84969","rating":5,"feedbackText":"","generatedReview":"Absolutely love shreedhan bites! Every time I visit, I just really enjoy myself. It's such a great spot, always a positive experience. Definitely a five-star place that leaves you feeling happy and satisfied. Can't recommend it enough for a consistent, great time.","createdAt":"2026-07-01T12:23:46.223Z"},{"id":"c860c712-7d88-4f24-8312-c99c618825bb","businessId":"224301be-60c1-4edc-b997-8d49c1a84969","rating":1,"feedbackText":"Music are too much louder","generatedReview":"","createdAt":"2026-07-01T11:58:49.834Z"}]
+8:58:10 PM [express] GET /api/dashboard/stats 304 in 24ms :: {"totalRatings":3,"avgRating":3.3,"aiReviewsGenerated":2,"privateFeedback":1}
+8:58:10 PM [express] GET /api/business 304 in 20ms :: {"id":"224301be-60c1-4edc-b997-8d49c1a84969","userId":"36536c7c-8fee-4e2f-8195-a17adbf45763","name":"shreedhan bites","category":"Other","logo":"","googleReviewUrl":"https://www.google.com/search?q=suvudhabazar&rlz=1C1GCEA_enIN1113IN1113&oq=suvudhabazar&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIJCAEQABgNGIAEMgkIAhAAGA0YgAQyDwgDEC4YDRivARjHARiABDIJCAQQABgNGIAEMg8IBRAuGA0YrwEYxwEYgAQyCQgGEAAYDRiABDIJCAcQABgNGIAEMgkICBAAGA0YgAQyCQgJEAAYDRiABNIBCTczMjhqMGoxNagCALACAA&sourceid=chrome&ie=UTF-8#","publicSlug":"aashishpanjiyar20-mr20gu7c","createdAt":"2026-07-01T11:47:31.183Z"}

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useParams } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@/hooks/use-firestore";
 import { apiRequest } from "@/lib/queryClient";
 import { Copy, ExternalLink, RefreshCw, Check, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface PublicBusiness {
   id: string;
@@ -10,6 +11,7 @@ interface PublicBusiness {
   category: string;
   logo: string;
   googleReviewUrl: string;
+  publicSlug?: string;
 }
 
 type Step = "rating" | "high-form" | "generating" | "review-draft" | "low-form" | "low-thanks";
@@ -55,6 +57,8 @@ export default function CustomerReview() {
   const [generatedReview, setGeneratedReview] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const { toast } = useToast();
+
   const generateMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/generate-review", {
@@ -64,12 +68,34 @@ export default function CustomerReview() {
         experience,
         employeeName,
       });
+      if (!res.ok) {
+        throw new Error("Failed to generate review. Please check your Gemini API Key.");
+      }
       return res.json() as Promise<{ review: string }>;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data: any) => {
       setGeneratedReview(data.review);
-      setStep("review-draft");
+      // Auto copy and redirect just like before
+      try { await navigator.clipboard.writeText(data.review); } catch {}
+      setCopied(true);
+      await feedbackMutation.mutateAsync({ generatedReview: data.review });
+      toast({
+        title: "Review Copied!",
+        description: "Redirecting you to Google to paste your review...",
+      });
+      setTimeout(() => {
+        if (business?.googleReviewUrl) window.open(business.googleReviewUrl, "_blank");
+      }, 1500);
+      setStep("review-draft"); // We can still show it in case popup blocker blocks the redirect
     },
+    onError: (err: any) => {
+      setStep("high-form");
+      toast({
+        title: "Error",
+        description: err.message || "Something went wrong.",
+        variant: "destructive",
+      });
+    }
   });
 
   const feedbackMutation = useMutation({
