@@ -4,7 +4,8 @@ export interface Business {
   name: string;
   slug: string;
   logoUrl?: string;
-  googleReviewLink?: string;
+  googleReviewUrl?: string;
+  category?: string;
   placeId?: string;
   themeColor: string;
 }
