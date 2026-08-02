@@ -32,22 +32,33 @@ export async function apiRequest(
     if (url === "/api/generate-review" && method === "POST") {
       const { businessName, category, rating, experience, employeeName } = data;
       
-      const prompt = `Write a short, authentic-sounding Google review for a ${category} named "${businessName}".
+      const prompt = `Write 3 different, authentic-sounding Google review options for a ${category} named "${businessName}".
 The user gave a rating of ${rating} out of 5 stars.
-Their experience: "${experience}"
+${experience ? `Their experience: "${experience}"` : "The user did not provide specific details, so write a general positive review based on the rating and business type."}
 ${employeeName ? `They were helped by an employee named ${employeeName}.` : ""}
 
 Guidelines:
-- Keep it under 3-4 sentences.
-- Sound like a real person writing it.
-- Mention the employee if provided.
-- Do not include any brackets, placeholders, or quotes around the review. Just the raw text.`;
+- Keep each option under 3-4 sentences.
+- Make them sound like real people wrote them, with slightly different tones or focuses.
+- Do not include any brackets, placeholders, or quotes around the reviews.
+- RETURN EXACTLY a JSON array containing the 3 review strings. No markdown formatting, just the raw JSON array. Example: ["review 1", "review 2", "review 3"]`;
 
-      const genModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const genModel = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash",
+        generationConfig: { responseMimeType: "application/json" }
+      });
       const result = await genModel.generateContent(prompt);
-      const reviewText = result.response.text();
+      const text = result.response.text();
       
-      return new Response(JSON.stringify({ review: reviewText }), { status: 200, headers: { 'Content-Type': 'application/json' }});
+      let reviews = [];
+      try {
+        reviews = JSON.parse(text);
+        if (!Array.isArray(reviews)) reviews = [text];
+      } catch (e) {
+        reviews = [text];
+      }
+      
+      return new Response(JSON.stringify({ reviews }), { status: 200, headers: { 'Content-Type': 'application/json' }});
     }
 
     return new Response(JSON.stringify({ error: "Route not found" }), { status: 404 });

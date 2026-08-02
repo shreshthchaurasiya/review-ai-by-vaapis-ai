@@ -54,7 +54,8 @@ export default function CustomerReview() {
   const [experience, setExperience] = useState("");
   const [employeeName, setEmployeeName] = useState("");
   const [privateFeedback, setPrivateFeedback] = useState("");
-  const [generatedReview, setGeneratedReview] = useState("");
+  const [generatedReviews, setGeneratedReviews] = useState<string[]>([]);
+  const [selectedReviewIndex, setSelectedReviewIndex] = useState(0);
   const [copied, setCopied] = useState(false);
 
   const { toast } = useToast();
@@ -71,33 +72,12 @@ export default function CustomerReview() {
       if (!res.ok) {
         throw new Error("Failed to generate review. Please check your Gemini API Key.");
       }
-      return res.json() as Promise<{ review: string }>;
+      return res.json() as Promise<{ reviews: string[] }>;
     },
     onSuccess: async (data: any) => {
-      setGeneratedReview(data.review);
-      // Auto copy and redirect just like before
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(data.review);
-        } else {
-          const el = document.createElement("textarea");
-          el.value = data.review;
-          document.body.appendChild(el);
-          el.select();
-          document.execCommand("copy");
-          document.body.removeChild(el);
-        }
-      } catch {}
-      setCopied(true);
-      await feedbackMutation.mutateAsync({ generatedReview: data.review });
-      toast({
-        title: "Review Copied!",
-        description: "Redirecting you to Google to paste your review...",
-      });
-      setTimeout(() => {
-        if (business?.googleReviewUrl) window.open(business.googleReviewUrl, "_blank");
-      }, 1500);
-      setStep("review-draft"); // We can still show it in case popup blocker blocks the redirect
+      setGeneratedReviews(data.reviews || []);
+      setSelectedReviewIndex(0);
+      setStep("review-draft");
     },
     onError: (err: any) => {
       setStep("high-form");
@@ -141,12 +121,14 @@ export default function CustomerReview() {
   };
 
   const handleCopyAndPost = async () => {
+    const selectedReview = generatedReviews[selectedReviewIndex];
+    if (!selectedReview) return;
     try {
       if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(generatedReview);
+        await navigator.clipboard.writeText(selectedReview);
       } else {
         const el = document.createElement("textarea");
-        el.value = generatedReview;
+        el.value = selectedReview;
         document.body.appendChild(el);
         el.select();
         document.execCommand("copy");
@@ -154,19 +136,21 @@ export default function CustomerReview() {
       }
     } catch {}
     setCopied(true);
-    await feedbackMutation.mutateAsync({ generatedReview });
+    await feedbackMutation.mutateAsync({ generatedReview: selectedReview });
     setTimeout(() => {
       if (business?.googleReviewUrl) window.open(business.googleReviewUrl, "_blank");
     }, 400);
   };
 
   const handleCopyOnly = async () => {
+    const selectedReview = generatedReviews[selectedReviewIndex];
+    if (!selectedReview) return;
     try {
       if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(generatedReview);
+        await navigator.clipboard.writeText(selectedReview);
       } else {
         const el = document.createElement("textarea");
-        el.value = generatedReview;
+        el.value = selectedReview;
         document.body.appendChild(el);
         el.select();
         document.execCommand("copy");
@@ -287,13 +271,13 @@ export default function CustomerReview() {
 
                 <div>
                   <label className="block text-sm font-medium text-[#111827] mb-1.5">
-                    What did you enjoy most? <span className="text-red-400">*</span>
+                    Anything specific you loved? <span className="text-[#9CA3AF] font-normal text-xs">(optional)</span>
                   </label>
                   <textarea
                     value={experience}
                     onChange={e => setExperience(e.target.value)}
                     rows={3}
-                    placeholder="e.g. The coffee was incredible and the atmosphere was so cozy…"
+                    placeholder="e.g. Friendly staff, delicious coffee, clean space"
                     className="w-full px-4 py-3 rounded-xl border border-[#ECECF2] bg-[#FAFAFC] text-[#111827] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#6D28D9]/20 focus:border-[#6D28D9] transition-colors resize-none"
                     data-testid="textarea-experience"
                   />
@@ -307,7 +291,7 @@ export default function CustomerReview() {
                     type="text"
                     value={employeeName}
                     onChange={e => setEmployeeName(e.target.value)}
-                    placeholder="e.g. Sarah"
+                    placeholder="e.g. Alex, Sarah..."
                     className="w-full px-4 py-2.5 rounded-xl border border-[#ECECF2] bg-[#FAFAFC] text-[#111827] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#6D28D9]/20 focus:border-[#6D28D9] transition-colors"
                     data-testid="input-employee"
                   />
@@ -315,11 +299,11 @@ export default function CustomerReview() {
 
                 <button
                   onClick={handleGenerateReview}
-                  disabled={!experience.trim()}
-                  className="w-full py-3 bg-[#6D28D9] hover:bg-[#5B21B6] text-white text-sm font-semibold rounded-2xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  disabled={generateMutation.isPending}
+                  className="w-full py-3 bg-[#6D28D9] hover:bg-[#5B21B6] text-white text-sm font-semibold rounded-2xl transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
                   data-testid="button-generate"
                 >
-                  ✨ Generate Review
+                  ✨ Generate AI Review Draft
                 </button>
                 <button
                   onClick={() => setStep("rating")}
@@ -337,33 +321,45 @@ export default function CustomerReview() {
             {step === "review-draft" && (
               <div className="flex flex-col gap-5">
                 <div className="text-center">
-                  <div className="text-2xl mb-1">🎉</div>
-                  <h2 className="text-lg font-bold text-[#111827]">Your Review Draft</h2>
-                  <p className="text-[#6B7280] text-sm mt-1">Edit it if you'd like, then post it on Google.</p>
+                  <div className="flex justify-center mb-3">
+                    <div className="w-10 h-10 bg-[#F5F3FF] text-[#6D28D9] rounded-full flex items-center justify-center text-xl shadow-sm">
+                      ✨
+                    </div>
+                  </div>
+                  <h2 className="text-lg font-bold text-[#111827]">Your Personalized Review Draft</h2>
+                  <p className="text-[#6B7280] text-sm mt-1">Select your favorite option and post it on Google.</p>
                 </div>
 
-                <textarea
-                  value={generatedReview}
-                  onChange={e => setGeneratedReview(e.target.value)}
-                  rows={5}
-                  className="w-full px-4 py-3 rounded-xl border border-[#6D28D9]/30 bg-[#FAFAFC] text-[#111827] text-sm focus:outline-none focus:ring-2 focus:ring-[#6D28D9]/20 focus:border-[#6D28D9] transition-colors resize-none leading-relaxed"
-                  data-testid="textarea-review"
-                />
+                <div className="flex flex-col gap-3">
+                  {generatedReviews.map((review, idx) => (
+                    <div 
+                      key={idx}
+                      onClick={() => setSelectedReviewIndex(idx)}
+                      className={`relative p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        selectedReviewIndex === idx 
+                          ? "border-[#6D28D9] bg-[#F5F3FF]/50 shadow-sm" 
+                          : "border-[#ECECF2] hover:border-[#6D28D9]/40 bg-white"
+                      }`}
+                    >
+                      {selectedReviewIndex === idx && (
+                        <div className="absolute top-3 right-3 text-[#6D28D9]">
+                          <Check size={18} strokeWidth={3} />
+                        </div>
+                      )}
+                      <p className={`text-sm leading-relaxed pr-6 ${selectedReviewIndex === idx ? "text-[#111827]" : "text-[#4B5563]"}`}>
+                        {review}
+                      </p>
+                    </div>
+                  ))}
+                </div>
 
                 <div className="flex gap-2">
                   <button
                     onClick={handleRegenerateReview}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[#ECECF2] text-sm font-medium text-[#6B7280] hover:bg-[#FAFAFC] transition-colors"
+                    className="flex items-center justify-center flex-1 py-2.5 rounded-xl border border-[#ECECF2] text-sm font-medium text-[#6B7280] hover:bg-[#FAFAFC] transition-colors"
                     data-testid="button-regenerate"
                   >
-                    <RefreshCw size={14} /> Regenerate
-                  </button>
-                  <button
-                    onClick={handleCopyOnly}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[#ECECF2] text-sm font-medium text-[#6B7280] hover:bg-[#FAFAFC] transition-colors"
-                    data-testid="button-copy"
-                  >
-                    {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
+                    <RefreshCw size={14} className="mr-1.5" /> Regenerate
                   </button>
                 </div>
 
@@ -374,15 +370,14 @@ export default function CustomerReview() {
                     className="w-full py-3 bg-[#6D28D9] hover:bg-[#5B21B6] text-white text-sm font-semibold rounded-2xl transition-colors flex items-center justify-center gap-2"
                     data-testid="button-post-google"
                   >
-                    <ExternalLink size={15} />
-                    {feedbackMutation.isPending ? "Opening…" : "Copy & Post on Google"}
+                    {feedbackMutation.isPending ? "Opening…" : "Post Review on Google"} <ExternalLink size={15} />
                   </button>
                 ) : (
                   <button
                     onClick={handleCopyOnly}
                     className="w-full py-3 bg-[#6D28D9] hover:bg-[#5B21B6] text-white text-sm font-semibold rounded-2xl transition-colors flex items-center justify-center gap-2"
                   >
-                    <Copy size={15} /> Copy Review
+                    <Copy size={15} /> Copy Selected Review
                   </button>
                 )}
               </div>
