@@ -68,7 +68,16 @@ export default function BusinessPage() {
 
   const copyLink = () => {
     if (qrData?.url) {
-      navigator.clipboard.writeText(qrData.url);
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(qrData.url);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = qrData.url;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

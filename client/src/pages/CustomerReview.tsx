@@ -76,7 +76,18 @@ export default function CustomerReview() {
     onSuccess: async (data: any) => {
       setGeneratedReview(data.review);
       // Auto copy and redirect just like before
-      try { await navigator.clipboard.writeText(data.review); } catch {}
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(data.review);
+        } else {
+          const el = document.createElement("textarea");
+          el.value = data.review;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand("copy");
+          document.body.removeChild(el);
+        }
+      } catch {}
       setCopied(true);
       await feedbackMutation.mutateAsync({ generatedReview: data.review });
       toast({
@@ -130,7 +141,18 @@ export default function CustomerReview() {
   };
 
   const handleCopyAndPost = async () => {
-    try { await navigator.clipboard.writeText(generatedReview); } catch {}
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(generatedReview);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = generatedReview;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
+    } catch {}
     setCopied(true);
     await feedbackMutation.mutateAsync({ generatedReview });
     setTimeout(() => {
@@ -140,7 +162,16 @@ export default function CustomerReview() {
 
   const handleCopyOnly = async () => {
     try {
-      await navigator.clipboard.writeText(generatedReview);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(generatedReview);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = generatedReview;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {}
