@@ -1,6 +1,7 @@
 import { useQuery } from "@/hooks/use-firestore";
-import { MessageSquare, Star } from "lucide-react";
+import { MessageSquare, Star, LogOut } from "lucide-react";
 import MerchantLayout from "@/components/MerchantLayout";
+import { useAuth } from "@/hooks/use-auth";
 import type { Feedback } from "@/lib/types";
 
 function StarRow({ rating }: { rating: number }) {
@@ -13,6 +14,12 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 export default function FeedbackPage() {
+  const { logout } = useAuth();
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = "/";
+  };
+
   const { data: feedbackList = [], isLoading } = useQuery<Feedback[]>({
     queryKey: ["/api/feedback"],
   });
@@ -24,13 +31,20 @@ export default function FeedbackPage() {
     <MerchantLayout>
       <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-[#ECECF2] px-4 md:px-8 h-14 md:h-16 flex items-center justify-between">
         <h1 className="text-sm font-semibold text-[#111827]">Feedback</h1>
-        <div className="flex gap-2 text-xs">
-          <span className="bg-[#F0FDF4] text-[#16A34A] px-2.5 py-1 rounded-full font-medium">
-            {publicReviews.length} public
-          </span>
-          <span className="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full font-medium">
-            {privateReviews.length} private
-          </span>
+        <div className="flex items-center gap-3">
+          <div className="flex gap-2 text-xs">
+            <span className="bg-[#F0FDF4] text-[#16A34A] px-2.5 py-1 rounded-full font-medium">
+              {publicReviews.length} public
+            </span>
+            <span className="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full font-medium hidden md:inline">
+              {privateReviews.length} private
+            </span>
+          </div>
+          <div className="w-px h-6 bg-[#ECECF2] mx-1"></div>
+          <button onClick={handleLogout} className="flex items-center gap-2 text-[#EF4444] hover:bg-red-50 p-2 rounded-lg transition-colors">
+            <LogOut size={18} strokeWidth={1.8} />
+            <span className="text-xs font-medium hidden md:inline">Logout</span>
+          </button>
         </div>
       </div>
 

@@ -30,8 +30,53 @@ export async function apiRequest(
     }
 
     if (url === "/api/generate-review" && method === "POST") {
-      const { businessName, category, rating, experience, employeeName } = data;
+      const { businessId, businessName, category, rating, experience, employeeName } = data;
       
+      // Limit Checking Logic
+      if (businessId) {
+        const docRef = doc(db, "businesses", businessId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const bData = docSnap.data();
+          const plan = bData.plan || "free";
+          const planStartDate = bData.planStartDate ? new Date(bData.planStartDate) : new Date();
+          let dailyAiCount = bData.dailyAiCount || 0;
+          let lastAiGenDate = bData.lastAiGenDate || "";
+          
+          const today = new Date().toISOString().split('T')[0];
+          
+          if (lastAiGenDate !== today) {
+            dailyAiCount = 0;
+            lastAiGenDate = today;
+          }
+          
+          if (plan === "free") {
+            // Check 3-day trial
+            const daysSinceStart = Math.floor((new Date().getTime() - planStartDate.getTime()) / (1000 * 3600 * 24));
+            if (daysSinceStart > 3) {
+              return new Response(JSON.stringify({ error: "Upgrade plan today, review generation limit has expired." }), { status: 403 });
+            }
+            
+            // Check daily limit (10)
+            if (dailyAiCount >= 10) {
+              return new Response(JSON.stringify({ error: "Daily limit of 10 AI reviews reached for the Free Plan." }), { status: 403 });
+            }
+          } else if (plan === "pro") {
+             // Check daily limit (100)
+            if (dailyAiCount >= 100) {
+              return new Response(JSON.stringify({ error: "Daily limit of 100 AI reviews reached for the Pro Plan." }), { status: 403 });
+            }
+          }
+          
+          // Increment limit before generation (to prevent race conditions in a real app, but here it's fine)
+          await updateDoc(docRef, {
+            dailyAiCount: dailyAiCount + 1,
+            lastAiGenDate: today
+          });
+        }
+      }
+
       const prompt = `Write 3 different, authentic-sounding Google review options for a ${category} named "${businessName}".
 The user gave a rating of ${rating} out of 5 stars.
 ${experience ? `Their experience: "${experience}"` : "The user did not provide specific details, so write a general positive review based on the rating and business type."}

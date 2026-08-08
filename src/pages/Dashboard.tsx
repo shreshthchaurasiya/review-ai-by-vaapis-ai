@@ -1,5 +1,5 @@
 import { useQuery } from "@/hooks/use-firestore";
-import { Users, Star, Sparkles, MessageSquare } from "lucide-react";
+import { Users, Star, Sparkles, MessageSquare, LogOut } from "lucide-react";
 import MerchantLayout from "@/components/MerchantLayout";
 import { useAuth } from "@/hooks/use-auth";
 import type { Feedback, Business } from "@/lib/types";
@@ -39,7 +39,12 @@ function RatingBar({ stars, count, total }: { stars: number; count: number; tota
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = "/";
+  };
 
   const { data: stats } = useQuery<{ totalRatings: number; avgRating: number; aiReviewsGenerated: number; privateFeedback: number }>({
     queryKey: ["/api/dashboard/stats"],
@@ -70,8 +75,12 @@ export default function Dashboard() {
   return (
     <MerchantLayout>
       {/* Top Bar */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-[#ECECF2] px-4 md:px-8 h-14 md:h-16 flex items-center">
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-[#ECECF2] px-4 md:px-8 h-14 md:h-16 flex items-center justify-between">
         <h1 className="text-sm font-semibold text-[#111827]">Dashboard</h1>
+        <button onClick={handleLogout} className="flex items-center gap-2 text-[#EF4444] hover:bg-red-50 p-2 rounded-lg transition-colors">
+          <LogOut size={18} strokeWidth={1.8} />
+          <span className="text-xs font-medium hidden md:inline">Logout</span>
+        </button>
       </div>
 
       <main className="flex-1 px-4 md:px-8 py-5 md:py-8 space-y-5 md:space-y-8">
@@ -82,6 +91,44 @@ export default function Dashboard() {
             <span className="text-[#6D28D9]">{business?.name || user?.email?.split("@")[0] || "there"}</span>
           </h2>
           <p className="text-[#6B7280] text-sm mt-1">Here's what's happening with your reviews today.</p>
+        </div>
+
+        {/* Daily Limit Tracker */}
+        <div className="bg-white rounded-2xl border border-[#ECECF2] p-4 md:p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-[#111827]">Daily AI Reviews Limit</h3>
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[#F5F3FF] text-[#6D28D9] uppercase tracking-wider">
+              {business?.plan === "pro" ? "Pro Plan" : "Free Plan"}
+            </span>
+          </div>
+          
+          {(() => {
+            const today = new Date().toISOString().split('T')[0];
+            const used = business?.lastAiGenDate === today ? (business?.dailyAiCount || 0) : 0;
+            const limit = business?.plan === "pro" ? 100 : 10;
+            const left = Math.max(0, limit - used);
+            const pct = Math.min(100, Math.round((used / limit) * 100));
+            
+            return (
+              <>
+                <div className="flex items-end justify-between mb-2">
+                  <div className="text-2xl font-bold text-[#111827]">
+                    {used} <span className="text-sm font-medium text-[#6B7280]">/ {limit} used</span>
+                  </div>
+                  <div className="text-sm font-medium text-[#16A34A]">{left} left today</div>
+                </div>
+                <div className="w-full bg-[#F3F4F6] h-2.5 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${pct >= 90 ? 'bg-[#EF4444]' : pct >= 75 ? 'bg-amber-500' : 'bg-[#6D28D9]'}`} 
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {pct >= 100 && (
+                  <p className="text-xs text-[#EF4444] mt-2 font-medium">You have reached your daily limit. Upgrade your plan for more.</p>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Stat Cards */}

@@ -46,7 +46,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: "",
         category: "",
         googleReviewUrl: "",
-        logo: ""
+        logo: "",
+        plan: "free",
+        planStartDate: new Date().toISOString(),
+        dailyAiCount: 0,
+        lastAiGenDate: ""
       });
     } catch (error: any) {
       throw new Error(error.message);

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@/hooks/use-firestore";
 import { apiRequest } from "@/lib/queryClient";
-import { Copy, ExternalLink, RefreshCw, Check, Loader2 } from "lucide-react";
+import { Copy, ExternalLink, Check, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PublicBusiness {
@@ -63,6 +63,7 @@ export default function CustomerReview() {
   const generateMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/generate-review", {
+        businessId: business!.id,
         businessName: business!.name || business!.publicSlug || "this business",
         category: business!.category,
         rating,
@@ -70,7 +71,8 @@ export default function CustomerReview() {
         employeeName,
       });
       if (!res.ok) {
-        throw new Error("Failed to generate review. Please check your Gemini API Key.");
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to generate review. Please try again.");
       }
       return res.json() as Promise<{ reviews: string[] }>;
     },
@@ -111,11 +113,6 @@ export default function CustomerReview() {
   };
 
   const handleGenerateReview = () => {
-    setStep("generating");
-    generateMutation.mutate();
-  };
-
-  const handleRegenerateReview = () => {
     setStep("generating");
     generateMutation.mutate();
   };
@@ -351,16 +348,6 @@ export default function CustomerReview() {
                       </p>
                     </div>
                   ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleRegenerateReview}
-                    className="flex items-center justify-center flex-1 py-2.5 rounded-xl border border-[#ECECF2] text-sm font-medium text-[#6B7280] hover:bg-[#FAFAFC] transition-colors"
-                    data-testid="button-regenerate"
-                  >
-                    <RefreshCw size={14} className="mr-1.5" /> Regenerate
-                  </button>
                 </div>
 
                 {business.googleReviewUrl ? (

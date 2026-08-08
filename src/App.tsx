@@ -12,6 +12,7 @@ import Dashboard from "@/pages/Dashboard";
 import BusinessPage from "@/pages/BusinessPage";
 import FeedbackPage from "@/pages/FeedbackPage";
 import CustomerReview from "@/pages/CustomerReview";
+import PlansPage from "@/pages/PlansPage";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
@@ -49,6 +50,9 @@ function Router() {
       </Route>
       <Route path="/settings">
         {() => <ProtectedRoute component={BusinessPage} />}
+      </Route>
+      <Route path="/plans">
+        {() => <ProtectedRoute component={PlansPage} />}
       </Route>
       <Route path="/r/:slug" component={CustomerReview} />
       <Route component={NotFound} />

@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@/hooks/use-firestore";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Copy, ExternalLink, QrCode, Check } from "lucide-react";
+import { Download, Copy, ExternalLink, QrCode, Check, LogOut } from "lucide-react";
 import MerchantLayout from "@/components/MerchantLayout";
+import { useAuth } from "@/hooks/use-auth";
 import type { Business } from "@/lib/types";
 
 const CATEGORIES = [
@@ -15,6 +16,12 @@ const CATEGORIES = [
 export default function BusinessPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { logout } = useAuth();
+  
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = "/";
+  };
 
   const { data: business } = useQuery<Business>({ queryKey: ["/api/business"] });
   const { data: qrData } = useQuery<{ qr: string; url: string }>({ queryKey: ["/api/business/qr"] });
@@ -93,8 +100,12 @@ export default function BusinessPage() {
 
   return (
     <MerchantLayout>
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-[#ECECF2] px-4 md:px-8 h-14 md:h-16 flex items-center">
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-[#ECECF2] px-4 md:px-8 h-14 md:h-16 flex items-center justify-between">
         <h1 className="text-sm font-semibold text-[#111827]">Business Profile</h1>
+        <button onClick={handleLogout} className="flex items-center gap-2 text-[#EF4444] hover:bg-red-50 p-2 rounded-lg transition-colors">
+          <LogOut size={18} strokeWidth={1.8} />
+          <span className="text-xs font-medium hidden md:inline">Logout</span>
+        </button>
       </div>
 
       <main className="flex-1 px-4 md:px-8 py-5 md:py-8">

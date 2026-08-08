@@ -8,6 +8,10 @@ export interface Business {
   category?: string;
   placeId?: string;
   themeColor: string;
+  plan?: "free" | "pro";
+  planStartDate?: string;
+  dailyAiCount?: number;
+  lastAiGenDate?: string;
 }
 
 export interface Feedback {
