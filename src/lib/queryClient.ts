@@ -43,12 +43,19 @@ export async function apiRequest(
           const planStartDate = bData.planStartDate ? new Date(bData.planStartDate) : new Date();
           let dailyAiCount = bData.dailyAiCount || 0;
           let lastAiGenDate = bData.lastAiGenDate || "";
+          let monthlyAiCount = bData.monthlyAiCount || 0;
+          let lastAiGenMonth = bData.lastAiGenMonth || "";
           
           const today = new Date().toISOString().split('T')[0];
+          const thisMonth = today.substring(0, 7); // YYYY-MM
           
           if (lastAiGenDate !== today) {
             dailyAiCount = 0;
             lastAiGenDate = today;
+          }
+          if (lastAiGenMonth !== thisMonth) {
+            monthlyAiCount = 0;
+            lastAiGenMonth = thisMonth;
           }
           
           if (plan === "free") {
@@ -63,16 +70,18 @@ export async function apiRequest(
               return new Response(JSON.stringify({ error: "Daily limit of 10 AI reviews reached for the Free Plan." }), { status: 403 });
             }
           } else if (plan === "pro") {
-             // Check daily limit (100)
-            if (dailyAiCount >= 100) {
-              return new Response(JSON.stringify({ error: "Daily limit of 100 AI reviews reached for the Pro Plan." }), { status: 403 });
+             // Check monthly limit (100)
+            if (monthlyAiCount >= 100) {
+              return new Response(JSON.stringify({ error: "Monthly limit of 100 AI reviews reached for the Pro Plan." }), { status: 403 });
             }
           }
           
-          // Increment limit before generation (to prevent race conditions in a real app, but here it's fine)
+          // Increment limits before generation
           await updateDoc(docRef, {
             dailyAiCount: dailyAiCount + 1,
-            lastAiGenDate: today
+            lastAiGenDate: today,
+            monthlyAiCount: monthlyAiCount + 1,
+            lastAiGenMonth: thisMonth
           });
         }
       }

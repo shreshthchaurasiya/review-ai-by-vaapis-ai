@@ -11,6 +11,8 @@ export default function PlansPage() {
   const { toast } = useToast();
   const [isYearly, setIsYearly] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [showCoupon, setShowCoupon] = useState(false);
   
   const qc = useQueryClient();
   const { data: business } = useQuery<Business>({ queryKey: ["/api/business"] });
@@ -56,7 +58,7 @@ export default function PlansPage() {
       const orderRes = await fetch("/.netlify/functions/createOrder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isYearly, businessId: business.id }),
+        body: JSON.stringify({ isYearly, businessId: business.id, couponCode }),
       });
 
       if (!orderRes.ok) {
@@ -249,6 +251,27 @@ export default function PlansPage() {
               )}
             </div>
             
+            {!showCoupon ? (
+              <button 
+                onClick={() => setShowCoupon(true)} 
+                className="text-xs font-medium text-[#6B7280] hover:text-[#6D28D9] mb-4 text-center w-full transition-colors"
+                disabled={currentPlan === "pro"}
+              >
+                Have a promo code?
+              </button>
+            ) : (
+              <div className="mb-4 flex justify-center">
+                <input 
+                  type="text" 
+                  placeholder="Enter promo code" 
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  disabled={currentPlan === "pro" || isProcessing}
+                  className="w-1/2 min-w-[150px] px-3 py-2 text-xs font-medium bg-gray-50 border border-[#E5E7EB] rounded-lg focus:outline-none focus:bg-white focus:border-[#6D28D9] uppercase transition-all placeholder:normal-case text-center tracking-widest"
+                />
+              </div>
+            )}
+
             <button 
               onClick={handleUpgradeClick}
               disabled={currentPlan === "pro" || isProcessing}
@@ -266,7 +289,7 @@ export default function PlansPage() {
               <p className="text-sm font-semibold text-[#111827] mb-4 uppercase tracking-wider">Everything in Free, plus:</p>
               <ul className="space-y-4">
                 {[
-                  "100 AI review drafts per day",
+                  "100 AI review drafts per month",
                   "Unlimited trial duration",
                   "Advanced analytics dashboard",
                   "Priority customer support",

@@ -12,6 +12,8 @@ export interface Business {
   planStartDate?: string;
   dailyAiCount?: number;
   lastAiGenDate?: string;
+  monthlyAiCount?: number;
+  lastAiGenMonth?: string;
 }
 
 export interface Feedback {

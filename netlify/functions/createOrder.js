@@ -8,7 +8,7 @@ export const handler = async (event, context) => {
 
   try {
     const data = JSON.parse(event.body);
-    const { isYearly, businessId } = data;
+    const { isYearly, businessId, couponCode } = data;
 
     if (!businessId) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Business ID is required' }) };
@@ -17,7 +17,19 @@ export const handler = async (event, context) => {
     // Amount in paise (1 INR = 100 Paise)
     // Monthly: 149 * 100 = 14900
     // Yearly: 1499 * 100 = 149900
-    const amount = isYearly ? 149900 : 14900;
+    let amount = isYearly ? 149900 : 14900;
+
+    // Apply Coupon Code Logic
+    if (couponCode) {
+      const code = couponCode.trim().toUpperCase();
+      if (code === "REVIEWAI50") {
+        // 50% discount
+        amount = Math.floor(amount * 0.5);
+      } else if (code === "FREEBIRD") {
+        // Flat Rs 100 on monthly, Rs 1000 on yearly (in paise)
+        amount = isYearly ? 49900 : 4900; 
+      }
+    }
 
     const instance = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,

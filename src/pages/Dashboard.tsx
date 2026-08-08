@@ -96,7 +96,9 @@ export default function Dashboard() {
         {/* Daily Limit Tracker */}
         <div className="bg-white rounded-2xl border border-[#ECECF2] p-4 md:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-[#111827]">Daily AI Reviews Limit</h3>
+            <h3 className="text-sm font-semibold text-[#111827]">
+              {business?.plan === "pro" ? "Monthly AI Reviews Limit" : "Daily AI Reviews Limit"}
+            </h3>
             <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[#F5F3FF] text-[#6D28D9] uppercase tracking-wider">
               {business?.plan === "pro" ? "Pro Plan" : "Free Plan"}
             </span>
@@ -104,7 +106,16 @@ export default function Dashboard() {
           
           {(() => {
             const today = new Date().toISOString().split('T')[0];
-            const used = business?.lastAiGenDate === today ? (business?.dailyAiCount || 0) : 0;
+            const thisMonth = today.substring(0, 7);
+            
+            let used = 0;
+            if (business?.plan === "pro") {
+              const lastMonth = business?.lastAiGenMonth || "";
+              used = lastMonth === thisMonth ? (business?.monthlyAiCount || 0) : 0;
+            } else {
+              used = business?.lastAiGenDate === today ? (business?.dailyAiCount || 0) : 0;
+            }
+            
             const limit = business?.plan === "pro" ? 100 : 10;
             const left = Math.max(0, limit - used);
             const pct = Math.min(100, Math.round((used / limit) * 100));
@@ -115,7 +126,9 @@ export default function Dashboard() {
                   <div className="text-2xl font-bold text-[#111827]">
                     {used} <span className="text-sm font-medium text-[#6B7280]">/ {limit} used</span>
                   </div>
-                  <div className="text-sm font-medium text-[#16A34A]">{left} left today</div>
+                  <div className="text-sm font-medium text-[#16A34A]">
+                    {left} left {business?.plan === "pro" ? "this month" : "today"}
+                  </div>
                 </div>
                 <div className="w-full bg-[#F3F4F6] h-2.5 rounded-full overflow-hidden">
                   <div 
