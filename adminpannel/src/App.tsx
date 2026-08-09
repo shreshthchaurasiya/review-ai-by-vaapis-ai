@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { LayoutDashboard, CreditCard, Users, Edit, Trash2, Plus, Save, X, Tag } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Users, Edit, Trash2, Plus, Save, X, Tag, Download, TrendingUp, Zap, Calendar } from 'lucide-react';
 
 interface SubscriptionPlan {
   id: string; // Document ID (e.g. basic, pro, free)
@@ -24,12 +24,20 @@ interface Coupon {
   usedCount: number;
   isActive: boolean;
 }
+interface BusinessAuditData {
+  id: string;
+  name: string;
+  plan: string;
+  planStartDate: string;
+  aiCount: number;
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [stats, setStats] = useState({ users: 0, businesses: 0 });
+  const [stats, setStats] = useState({ totalUsers: 0, totalBusinesses: 0, proUsers: 0, recentSignups: 0, totalAiReviews: 0 });
+  const [businessesLog, setBusinessesLog] = useState<BusinessAuditData[]>([]);
   
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
@@ -67,12 +75,67 @@ function App() {
 
   const fetchStats = async () => {
     try {
-      const { getDocs } = await import('firebase/firestore'); // Import dynamically just for stats if needed, or import at top
+      const { getDocs } = await import('firebase/firestore'); 
       const bSnap = await getDocs(collection(db, 'businesses'));
-      setStats({ users: bSnap.size, businesses: bSnap.size }); // Assuming 1:1 for now
+      const fSnap = await getDocs(collection(db, 'feedbacks'));
+      
+      let proCount = 0;
+      let recentCount = 0;
+      const logs: BusinessAuditData[] = [];
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      bSnap.forEach(doc => {
+        const data = doc.data();
+        if (data.plan === 'pro') proCount++;
+        
+        const joinDate = data.planStartDate ? new Date(data.planStartDate) : new Date(0);
+        if (joinDate >= sevenDaysAgo) recentCount++;
+        
+        logs.push({
+          id: doc.id,
+          name: data.name || 'Unnamed',
+          plan: data.plan || 'free',
+          planStartDate: data.planStartDate || new Date().toISOString(),
+          aiCount: (data.dailyAiCount || 0) + (data.monthlyAiCount || 0)
+        });
+      });
+
+      logs.sort((a, b) => new Date(b.planStartDate).getTime() - new Date(a.planStartDate).getTime());
+      
+      setStats({ 
+        totalUsers: bSnap.size, 
+        totalBusinesses: bSnap.size,
+        proUsers: proCount,
+        recentSignups: recentCount,
+        totalAiReviews: fSnap.size
+      });
+      setBusinessesLog(logs);
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
+  };
+
+  const handleExportCSV = () => {
+    if (businessesLog.length === 0) return;
+    const headers = ['Business ID', 'Business Name', 'Plan', 'Join Date', 'Total AI Usage'];
+    const rows = businessesLog.map(b => [
+      b.id,
+      `"${b.name}"`,
+      b.plan,
+      new Date(b.planStartDate).toLocaleDateString(),
+      b.aiCount.toString()
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `reviewai_audit_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleSavePlan = async () => {
@@ -162,22 +225,84 @@ function App() {
       <div className="flex-1 p-8">
         {activeTab === 'dashboard' ? (
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard Overview</h1>
-            <div className="grid grid-cols-2 gap-6 max-w-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+              <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors shadow-sm">
+                <Download size={16} /> Export Audit CSV
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
                 <div className="bg-blue-100 p-3 rounded-lg text-blue-600"><Users size={24} /></div>
                 <div>
-                  <div className="text-sm text-gray-500 font-medium">Total Users</div>
-                  <div className="text-2xl font-bold">{stats.users}</div>
+                  <div className="text-sm text-gray-500 font-medium">Total Businesses</div>
+                  <div className="text-2xl font-bold">{stats.totalBusinesses}</div>
                 </div>
               </div>
               <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                <div className="bg-purple-100 p-3 rounded-lg text-purple-600"><LayoutDashboard size={24} /></div>
+                <div className="bg-purple-100 p-3 rounded-lg text-purple-600"><Zap size={24} /></div>
                 <div>
-                  <div className="text-sm text-gray-500 font-medium">Total Businesses</div>
-                  <div className="text-2xl font-bold">{stats.businesses}</div>
+                  <div className="text-sm text-gray-500 font-medium">Pro Subscriptions</div>
+                  <div className="text-2xl font-bold">{stats.proUsers}</div>
                 </div>
               </div>
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+                <div className="bg-green-100 p-3 rounded-lg text-green-600"><TrendingUp size={24} /></div>
+                <div>
+                  <div className="text-sm text-gray-500 font-medium">New (Last 7 Days)</div>
+                  <div className="text-2xl font-bold">{stats.recentSignups}</div>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+                <div className="bg-amber-100 p-3 rounded-lg text-amber-600"><LayoutDashboard size={24} /></div>
+                <div>
+                  <div className="text-sm text-gray-500 font-medium">Total AI Reviews</div>
+                  <div className="text-2xl font-bold">{stats.totalAiReviews}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Calendar size={18} className="text-gray-500" /> Recent Activity / Audit Log</h2>
+                <span className="text-xs font-medium text-gray-500 px-2 py-1 bg-gray-200 rounded-full">{businessesLog.length} Records</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-white border-b border-gray-100 text-xs uppercase text-gray-500">
+                      <th className="px-6 py-3 font-semibold">Business Name</th>
+                      <th className="px-6 py-3 font-semibold">Plan</th>
+                      <th className="px-6 py-3 font-semibold">Join Date</th>
+                      <th className="px-6 py-3 font-semibold">Total AI Usage</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {businessesLog.length === 0 ? (
+                      <tr><td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">No data found</td></tr>
+                    ) : (
+                      businessesLog.slice(0, 10).map((b, i) => (
+                        <tr key={b.id || i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{b.name}</td>
+                          <td className="px-6 py-4">
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase ${b.plan === 'pro' ? 'bg-[#F5F3FF] text-[#6D28D9]' : 'bg-gray-100 text-gray-600'}`}>
+                              {b.plan}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">{new Date(b.planStartDate).toLocaleDateString()}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500">{b.aiCount} requests</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {businessesLog.length > 10 && (
+                <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 text-center text-xs text-gray-500">
+                  Showing latest 10 records. Use CSV export for full audit.
+                </div>
+              )}
             </div>
           </div>
         ) : activeTab === 'subscriptions' ? (
