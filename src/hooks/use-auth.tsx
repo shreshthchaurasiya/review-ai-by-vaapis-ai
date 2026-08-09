@@ -4,6 +4,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut,
+  signInWithPopup,
+  GoogleAuthProvider,
   User as FirebaseUser
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -14,6 +16,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -33,6 +36,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+      
+      // Check if business profile exists, if not create one
+      const businessRef = doc(db, "businesses", user.uid);
+      // We don't overwrite if it exists, so we should actually check.
+      // But since setDoc with merge: true or just letting the user complete profile later is standard, 
+      // let's do setDoc with merge: true so it doesn't overwrite existing data.
+      await setDoc(businessRef, {
+        ownerId: user.uid,
+        name: user.displayName || "",
+        plan: "free",
+        planStartDate: new Date().toISOString(),
+      }, { merge: true });
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
   };
 
   const signup = async (email: string, password: string) => {
@@ -62,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );
