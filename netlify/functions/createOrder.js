@@ -1,4 +1,18 @@
 import Razorpay from 'razorpay';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID
+};
+
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
 
 export const handler = async (event, context) => {
   // Only allow POST
@@ -8,26 +22,41 @@ export const handler = async (event, context) => {
 
   try {
     const data = JSON.parse(event.body);
-    const { isYearly, businessId, couponCode } = data;
+    const { isYearly, businessId, couponCode, planId } = data;
 
-    if (!businessId) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Business ID is required' }) };
+    if (!businessId || !planId) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Business ID and Plan ID are required' }) };
     }
 
+    // Fetch Plan Details from Firestore
+    const planRef = doc(db, 'subscription_plans', planId);
+    const planSnap = await getDoc(planRef);
+    
+    if (!planSnap.exists()) {
+      return { statusCode: 404, body: JSON.stringify({ error: 'Plan not found' }) };
+    }
+    
+    const planData = planSnap.data();
+    
     // Amount in paise (1 INR = 100 Paise)
-    // Monthly: 149 * 100 = 14900
-    // Yearly: 1499 * 100 = 149900
-    let amount = isYearly ? 149900 : 14900;
+    let amount = isYearly ? (planData.yearlyPrice * 100) : (planData.monthlyPrice * 100);
 
     // Apply Coupon Code Logic
     if (couponCode) {
       const code = couponCode.trim().toUpperCase();
-      if (code === "REVIEWAI50") {
-        // 50% discount
-        amount = Math.floor(amount * 0.5);
-      } else if (code === "FREEBIRD") {
-        // Flat Rs 100 on monthly, Rs 1000 on yearly (in paise)
-        amount = isYearly ? 49900 : 4900; 
+      const couponRef = doc(db, 'coupons', code);
+      const couponSnap = await getDoc(couponRef);
+      
+      if (couponSnap.exists()) {
+        const couponData = couponSnap.data();
+        if (couponData.isActive && (couponData.usageLimit === 0 || couponData.usedCount < couponData.usageLimit)) {
+          // Apply discount
+          amount = Math.max(0, Math.floor(amount * (1 - couponData.discountPercentage / 100)));
+        } else {
+          return { statusCode: 400, body: JSON.stringify({ error: 'Coupon is invalid, expired, or has reached its usage limit.' }) };
+        }
+      } else {
+        return { statusCode: 404, body: JSON.stringify({ error: 'Coupon not found.' }) };
       }
     }
 

@@ -1,8 +1,11 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@/hooks/use-firestore";
 import { Users, Star, Sparkles, MessageSquare, LogOut } from "lucide-react";
 import MerchantLayout from "@/components/MerchantLayout";
 import { useAuth } from "@/hooks/use-auth";
 import type { Feedback, Business } from "@/lib/types";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 function StatCard({
   label, value, icon: Icon, iconBg,
@@ -58,6 +61,25 @@ export default function Dashboard() {
     queryKey: ["/api/business"],
   });
 
+  const [planData, setPlanData] = useState<{ limit: number; limitType: 'daily' | 'monthly'; trialDays: number } | null>(null);
+
+  useEffect(() => {
+    if (business?.plan) {
+      getDoc(doc(db, 'subscription_plans', business.plan)).then(docSnap => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setPlanData({
+            limit: data.aiRequestLimit || (business.plan === "pro" ? 100 : 10),
+            limitType: data.limitType || (business.plan === "pro" ? 'monthly' : 'daily'),
+            trialDays: data.trialDays || (business.plan === "free" ? 3 : 0)
+          });
+        }
+      });
+    } else {
+      setPlanData({ limit: 10, limitType: 'daily', trialDays: 3 }); // Default for free plan if not loaded
+    }
+  }, [business?.plan]);
+
   const ratingDist = [5, 4, 3, 2, 1].map(s => ({
     stars: s,
     count: feedbackList.filter(f => f.rating === s).length,
@@ -93,15 +115,27 @@ export default function Dashboard() {
           <p className="text-[#6B7280] text-sm mt-1">Here's what's happening with your reviews today.</p>
         </div>
 
-        {/* Daily Limit Tracker */}
+        {/* Limit Tracker */}
         <div className="bg-white rounded-2xl border border-[#ECECF2] p-4 md:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-[#111827]">
-              {business?.plan === "pro" ? "Monthly AI Reviews Limit" : "Daily AI Reviews Limit"}
+              {planData?.limitType === 'monthly' ? "Monthly AI Reviews Limit" : "Daily AI Reviews Limit"}
             </h3>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[#F5F3FF] text-[#6D28D9] uppercase tracking-wider">
-              {business?.plan === "pro" ? "Pro Plan" : "Free Plan"}
-            </span>
+            <div className="flex items-center gap-2">
+              {planData?.trialDays ? (() => {
+                const start = business?.planStartDate ? new Date(business.planStartDate) : new Date();
+                const days = Math.floor((new Date().getTime() - start.getTime()) / (1000 * 3600 * 24));
+                const left = Math.max(0, planData.trialDays - days);
+                return (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${left === 0 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
+                    {left > 0 ? `${left} DAYS LEFT` : 'TRIAL EXPIRED'}
+                  </span>
+                );
+              })() : null}
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[#F5F3FF] text-[#6D28D9] uppercase tracking-wider">
+                {business?.plan === "pro" ? "Pro Plan" : "Free Plan"}
+              </span>
+            </div>
           </div>
           
           {(() => {
@@ -109,16 +143,16 @@ export default function Dashboard() {
             const thisMonth = today.substring(0, 7);
             
             let used = 0;
-            if (business?.plan === "pro") {
+            if (planData?.limitType === 'monthly') {
               const lastMonth = business?.lastAiGenMonth || "";
               used = lastMonth === thisMonth ? (business?.monthlyAiCount || 0) : 0;
             } else {
               used = business?.lastAiGenDate === today ? (business?.dailyAiCount || 0) : 0;
             }
             
-            const limit = business?.plan === "pro" ? 100 : 10;
+            const limit = planData?.limit || 10;
             const left = Math.max(0, limit - used);
-            const pct = Math.min(100, Math.round((used / limit) * 100));
+            const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
             
             return (
               <>
@@ -127,7 +161,7 @@ export default function Dashboard() {
                     {used} <span className="text-sm font-medium text-[#6B7280]">/ {limit} used</span>
                   </div>
                   <div className="text-sm font-medium text-[#16A34A]">
-                    {left} left {business?.plan === "pro" ? "this month" : "today"}
+                    {left} left {planData?.limitType === 'monthly' ? "this month" : "today"}
                   </div>
                 </div>
                 <div className="w-full bg-[#F3F4F6] h-2.5 rounded-full overflow-hidden">
@@ -137,7 +171,7 @@ export default function Dashboard() {
                   />
                 </div>
                 {pct >= 100 && (
-                  <p className="text-xs text-[#EF4444] mt-2 font-medium">You have reached your daily limit. Upgrade your plan for more.</p>
+                  <p className="text-xs text-[#EF4444] mt-2 font-medium">You have reached your {planData?.limitType} limit. Upgrade your plan for more.</p>
                 )}
               </>
             );

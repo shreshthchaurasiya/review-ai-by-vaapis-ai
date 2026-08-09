@@ -58,21 +58,29 @@ export async function apiRequest(
             lastAiGenMonth = thisMonth;
           }
           
-          if (plan === "free") {
-            // Check 3-day trial
+          const planDoc = await getDoc(doc(db, "subscription_plans", plan));
+          const planData = planDoc.exists() ? planDoc.data() : null;
+          
+          const limit = planData?.aiRequestLimit || (plan === "pro" ? 100 : 10);
+          const limitType = planData?.limitType || (plan === "pro" ? "monthly" : "daily");
+          const trialDays = planData?.trialDays || (plan === "free" ? 3 : 0);
+          
+          // Check Trial Days
+          if (trialDays > 0) {
             const daysSinceStart = Math.floor((new Date().getTime() - planStartDate.getTime()) / (1000 * 3600 * 24));
-            if (daysSinceStart > 3) {
-              return new Response(JSON.stringify({ error: "Upgrade plan today, review generation limit has expired." }), { status: 403 });
+            if (daysSinceStart >= trialDays) {
+              return new Response(JSON.stringify({ error: `Upgrade plan today, ${trialDays}-day review generation limit has expired.` }), { status: 403 });
             }
-            
-            // Check daily limit (10)
-            if (dailyAiCount >= 10) {
-              return new Response(JSON.stringify({ error: "Daily limit of 10 AI reviews reached for the Free Plan." }), { status: 403 });
+          }
+          
+          // Check limits dynamically
+          if (limitType === "monthly") {
+            if (monthlyAiCount >= limit) {
+              return new Response(JSON.stringify({ error: `Monthly limit of ${limit} AI reviews reached for this plan.` }), { status: 403 });
             }
-          } else if (plan === "pro") {
-             // Check monthly limit (100)
-            if (monthlyAiCount >= 100) {
-              return new Response(JSON.stringify({ error: "Monthly limit of 100 AI reviews reached for the Pro Plan." }), { status: 403 });
+          } else {
+            if (dailyAiCount >= limit) {
+              return new Response(JSON.stringify({ error: `Daily limit of ${limit} AI reviews reached for this plan.` }), { status: 403 });
             }
           }
           

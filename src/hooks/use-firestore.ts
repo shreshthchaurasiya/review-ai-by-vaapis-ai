@@ -51,6 +51,18 @@ export function useQuery<T = any>({ queryKey }: QueryOptions) {
         setData({ qr, url } as any);
       }
       
+      // /api/plans -> Get active subscription plans
+      else if (path === "/api/plans") {
+        const q = query(collection(db, "subscription_plans"), where("isActive", "==", true));
+        const querySnapshot = await getDocs(q);
+        const plans: any[] = [];
+        querySnapshot.forEach((doc) => {
+          plans.push({ id: doc.id, ...doc.data() });
+        });
+        plans.sort((a, b) => a.monthlyPrice - b.monthlyPrice);
+        setData(plans as any);
+      }
+      
       // /api/r/:slug -> Get public business details
       else if (path.startsWith("/api/r/")) {
         const slug = path.split("/")[3]; // /api/r/:slug

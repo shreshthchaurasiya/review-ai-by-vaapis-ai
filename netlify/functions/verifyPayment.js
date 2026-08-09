@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, updateDoc, increment } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY,
@@ -24,9 +24,9 @@ export const handler = async (event, context) => {
 
   try {
     const data = JSON.parse(event.body);
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, businessId, isYearly } = data;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, businessId, isYearly, planId, couponCode } = data;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !businessId) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !businessId || !planId) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required parameters' }) };
     }
 
@@ -52,13 +52,20 @@ export const handler = async (event, context) => {
     // Update Firestore Document
     const businessRef = doc(db, 'businesses', businessId);
     await updateDoc(businessRef, {
-      plan: "pro",
+      plan: planId,
       planStartDate: new Date().toISOString(),
-      dailyAiCount: 0,
-      lastAiGenDate: new Date().toISOString().split('T')[0],
+      monthlyAiCount: 0,
+      lastAiGenMonth: new Date().toISOString().split('T')[0].substring(0, 7),
       paymentId: razorpay_payment_id,
       isYearly: !!isYearly
     });
+
+    if (couponCode) {
+      const couponRef = doc(db, 'coupons', couponCode);
+      await updateDoc(couponRef, {
+        usedCount: increment(1)
+      });
+    }
 
     return {
       statusCode: 200,
