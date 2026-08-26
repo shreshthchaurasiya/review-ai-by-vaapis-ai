@@ -69,18 +69,18 @@ export async function apiRequest(
           if (trialDays > 0) {
             const daysSinceStart = Math.floor((new Date().getTime() - planStartDate.getTime()) / (1000 * 3600 * 24));
             if (daysSinceStart >= trialDays) {
-              return new Response(JSON.stringify({ error: `Upgrade plan today, ${trialDays}-day review generation limit has expired.` }), { status: 403 });
+              return new Response(JSON.stringify({ error: `AI Generation limit reached for this business.` }), { status: 403 });
             }
           }
           
           // Check limits dynamically
           if (limitType === "monthly") {
             if (monthlyAiCount >= limit) {
-              return new Response(JSON.stringify({ error: `Monthly limit of ${limit} AI reviews reached for this plan.` }), { status: 403 });
+              return new Response(JSON.stringify({ error: `AI Generation limit reached for this business.` }), { status: 403 });
             }
           } else {
             if (dailyAiCount >= limit) {
-              return new Response(JSON.stringify({ error: `Daily limit of ${limit} AI reviews reached for this plan.` }), { status: 403 });
+              return new Response(JSON.stringify({ error: `AI Generation limit reached for this business.` }), { status: 403 });
             }
           }
           

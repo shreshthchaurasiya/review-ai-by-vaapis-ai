@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Feedback, Business } from "@/lib/types";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { Link } from "wouter";
 
 function StatCard({
   label, value, icon: Icon, iconBg,
@@ -127,9 +128,16 @@ export default function Dashboard() {
                 const days = Math.floor((new Date().getTime() - start.getTime()) / (1000 * 3600 * 24));
                 const left = Math.max(0, planData.trialDays - days);
                 return (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${left === 0 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
-                    {left > 0 ? `${left} DAYS LEFT` : 'TRIAL EXPIRED'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${left === 0 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
+                      {left > 0 ? `${left} DAYS LEFT` : 'TRIAL EXPIRED'}
+                    </span>
+                    {left === 0 && (
+                      <Link to="/plans" className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#6D28D9] text-white hover:bg-[#5B21B6] transition-colors">
+                        UPGRADE PLAN
+                      </Link>
+                    )}
+                  </div>
                 );
               })() : null}
               <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[#F5F3FF] text-[#6D28D9] uppercase tracking-wider">

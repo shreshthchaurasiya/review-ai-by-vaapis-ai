@@ -53,6 +53,7 @@ export default function CustomerReview() {
   const [hovered, setHovered] = useState(0);
   const [experience, setExperience] = useState("");
   const [employeeName, setEmployeeName] = useState("");
+  const [isAiDisabled, setIsAiDisabled] = useState(false);
   const [privateFeedback, setPrivateFeedback] = useState("");
   const [generatedReviews, setGeneratedReviews] = useState<string[]>([]);
   const [selectedReviewIndex, setSelectedReviewIndex] = useState(0);
@@ -84,10 +85,13 @@ export default function CustomerReview() {
     onError: (err: any) => {
       setStep("high-form");
       toast({
-        title: "Error",
+        title: "Notice",
         description: err.message || "Something went wrong.",
-        variant: "destructive",
+        variant: "default",
       });
+      if (err.message?.toLowerCase().includes("limit reached")) {
+        setIsAiDisabled(true);
+      }
     }
   });
 
@@ -294,14 +298,20 @@ export default function CustomerReview() {
                   />
                 </div>
 
-                <button
-                  onClick={handleGenerateReview}
-                  disabled={generateMutation.isPending}
-                  className="w-full py-3 bg-[#6D28D9] hover:bg-[#5B21B6] text-white text-sm font-semibold rounded-2xl transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
-                  data-testid="button-generate"
-                >
-                  ✨ Generate AI Review Draft
-                </button>
+                {!isAiDisabled ? (
+                  <button
+                    onClick={handleGenerateReview}
+                    disabled={generateMutation.isPending}
+                    className="w-full py-3 bg-[#6D28D9] hover:bg-[#5B21B6] text-white text-sm font-semibold rounded-2xl transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+                    data-testid="button-generate"
+                  >
+                    ✨ Generate AI Review Draft
+                  </button>
+                ) : (
+                  <div className="w-full py-3 bg-gray-100 text-gray-500 text-sm font-medium rounded-2xl text-center border border-gray-200">
+                    AI generation is currently unavailable.
+                  </div>
+                )}
                 <button
                   onClick={() => setStep("rating")}
                   className="text-sm text-[#9CA3AF] hover:text-[#6B7280] transition-colors text-center"

@@ -9,7 +9,7 @@ import {
   User as FirebaseUser
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -44,17 +44,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
       
-      // Check if business profile exists, if not create one
       const businessRef = doc(db, "businesses", user.uid);
-      // We don't overwrite if it exists, so we should actually check.
-      // But since setDoc with merge: true or just letting the user complete profile later is standard, 
-      // let's do setDoc with merge: true so it doesn't overwrite existing data.
-      await setDoc(businessRef, {
-        ownerId: user.uid,
-        name: user.displayName || "",
-        plan: "free",
-        planStartDate: new Date().toISOString(),
-      }, { merge: true });
+      const businessSnap = await getDoc(businessRef);
+      
+      if (!businessSnap.exists()) {
+        await setDoc(businessRef, {
+          ownerId: user.uid,
+          name: user.displayName || "",
+          category: "",
+          googleReviewUrl: "",
+          logo: "",
+          plan: "free",
+          planStartDate: new Date().toISOString(),
+          dailyAiCount: 0,
+          lastAiGenDate: ""
+        });
+      }
     } catch (error: any) {
       throw new Error(error.message);
     }
