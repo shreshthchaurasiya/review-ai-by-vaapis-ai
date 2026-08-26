@@ -3,7 +3,7 @@ import { doc, updateDoc, collection, addDoc, getDoc } from "firebase/firestore";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export async function apiRequest(
   method: string,
@@ -106,7 +106,7 @@ Guidelines:
 - RETURN EXACTLY a JSON array containing the 3 review strings. No markdown formatting, just the raw JSON array. Example: ["review 1", "review 2", "review 3"]`;
 
       const genModel = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash-8b",
+        model: "gemini-1.5-flash",
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await genModel.generateContent(prompt);
