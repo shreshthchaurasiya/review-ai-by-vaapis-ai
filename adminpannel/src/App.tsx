@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { LayoutDashboard, CreditCard, Users, Edit, Trash2, Plus, Save, X, Tag, Download, TrendingUp, Zap, Calendar } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Users, Edit, Trash2, Plus, Save, X, Tag, Download, TrendingUp, Zap, Calendar, LogOut } from 'lucide-react';
 
 interface SubscriptionPlan {
   id: string; // Document ID (e.g. basic, pro, free)
@@ -39,6 +39,11 @@ function App() {
   const [stats, setStats] = useState({ totalUsers: 0, totalBusinesses: 0, proUsers: 0, recentSignups: 0, totalAiReviews: 0 });
   const [businessesLog, setBusinessesLog] = useState<BusinessAuditData[]>([]);
   
+  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem("adminAuth") === "true");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
 
@@ -195,6 +200,72 @@ function App() {
     }
   };
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (username === "admin" && password === "adshree@121#") {
+      setIsAuthenticated(true);
+      localStorage.setItem("adminAuth", "true");
+      setLoginError("");
+    } else {
+      setLoginError("Invalid username or password");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem("adminAuth");
+    setUsername("");
+    setPassword("");
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-black text-[#6D28D9]">ReviewAI Admin</h1>
+            <p className="text-sm text-gray-500 mt-2">Enter credentials to access the admin panel</p>
+          </div>
+          
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <input 
+                type="text" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6D28D9] focus:border-[#6D28D9] outline-none transition-all"
+                placeholder="Enter username"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6D28D9] focus:border-[#6D28D9] outline-none transition-all"
+                placeholder="Enter password"
+                required
+              />
+            </div>
+            
+            {loginError && <p className="text-sm text-red-600 text-center bg-red-50 py-2 rounded-lg">{loginError}</p>}
+            
+            <button 
+              type="submit"
+              className="w-full py-3 px-4 bg-[#6D28D9] hover:bg-[#5B21B6] text-white font-semibold rounded-xl transition-colors shadow-sm"
+            >
+              Sign In
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -219,6 +290,15 @@ function App() {
         >
           <Tag size={20} /> Coupons
         </button>
+        
+        <div className="mt-auto">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors text-red-600 hover:bg-red-50"
+          >
+            <LogOut size={20} /> Logout
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
