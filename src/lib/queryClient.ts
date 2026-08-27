@@ -100,14 +100,15 @@ ${experience ? `Their experience: "${experience}"` : "The user did not provide s
 ${employeeName ? `They were helped by an employee named ${employeeName}.` : ""}
 
 Guidelines:
-- Keep the review under 3-4 sentences.
+- STRICTLY write between 25 to 45 words. Do not exceed 45 words.
+- Make it highly unique, using diverse vocabulary so it doesn't sound repetitive or like a template.
 - Make it sound like a real person wrote it.
 - Do not include any brackets, placeholders, or quotes around the review.
 - RETURN EXACTLY a JSON array containing the 1 review string. No markdown formatting, just the raw JSON array. Example: ["review 1"]`;
 
       const genModel = genAI.getGenerativeModel({ 
         model: "gemini-2.5-flash",
-        generationConfig: { responseMimeType: "application/json" }
+        generationConfig: { responseMimeType: "application/json", temperature: 0.85 }
       });
       const result = await genModel.generateContent(prompt);
       const text = result.response.text();

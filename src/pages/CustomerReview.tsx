@@ -59,6 +59,8 @@ export default function CustomerReview() {
   const [generatedReviews, setGeneratedReviews] = useState<string[]>([]);
   const [selectedReviewIndex, setSelectedReviewIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { toast } = useToast();
 
@@ -82,6 +84,7 @@ export default function CustomerReview() {
       setGeneratedReviews(data.reviews || []);
       setSelectedReviewIndex(0);
       setStep("review-draft");
+      setIsGenerating(false);
     },
     onError: (err: any) => {
       setStep("high-form");
@@ -100,6 +103,7 @@ export default function CustomerReview() {
       if (err.message?.toLowerCase().includes("limit reached")) {
         setIsAiDisabled(true);
       }
+      setIsGenerating(false);
     }
   });
 
@@ -125,13 +129,22 @@ export default function CustomerReview() {
   };
 
   const handleGenerateReview = () => {
+    if (isGenerating) return;
+    setIsGenerating(true);
     setStep("generating");
     generateMutation.mutate();
   };
 
   const handleCopyAndPost = async () => {
+    if (isPosting) return;
+    setIsPosting(true);
+    
     const selectedReview = generatedReviews[selectedReviewIndex];
-    if (!selectedReview) return;
+    if (!selectedReview) {
+      setIsPosting(false);
+      return;
+    }
+    
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(selectedReview);
@@ -144,11 +157,19 @@ export default function CustomerReview() {
         document.body.removeChild(el);
       }
     } catch {}
+    
     setCopied(true);
-    await feedbackMutation.mutateAsync({ generatedReview: selectedReview });
-    setTimeout(() => {
-      if (business?.googleReviewUrl) window.open(business.googleReviewUrl, "_blank");
-    }, 400);
+    
+    // Open Google Review URL IMMEDIATELY to prevent mobile browsers from blocking the popup
+    if (business?.googleReviewUrl) {
+      window.open(business.googleReviewUrl, "_blank");
+    }
+    
+    // Perform database API call in the background (fire and forget)
+    feedbackMutation.mutate(
+      { generatedReview: selectedReview },
+      { onSettled: () => setIsPosting(false) }
+    );
   };
 
   const handleCopyOnly = async () => {
@@ -371,11 +392,11 @@ export default function CustomerReview() {
                 {business.googleReviewUrl ? (
                   <button
                     onClick={handleCopyAndPost}
-                    disabled={feedbackMutation.isPending}
-                    className="w-full py-3 bg-[#6D28D9] hover:bg-[#5B21B6] text-white text-sm font-semibold rounded-2xl transition-colors flex items-center justify-center gap-2"
+                    disabled={feedbackMutation.isPending || isPosting}
+                    className="w-full py-3 bg-[#6D28D9] hover:bg-[#5B21B6] text-white text-sm font-semibold rounded-2xl transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     data-testid="button-post-google"
                   >
-                    {feedbackMutation.isPending ? "Opening…" : "Post Review on Google"} <ExternalLink size={15} />
+                    {feedbackMutation.isPending || isPosting ? "Opening…" : "Post Review on Google"} <ExternalLink size={15} />
                   </button>
                 ) : (
                   <button
