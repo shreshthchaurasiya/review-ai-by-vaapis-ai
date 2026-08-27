@@ -85,11 +85,11 @@ export default function CustomerReview() {
     },
     onError: (err: any) => {
       setStep("high-form");
-      const isGeminiError = err?.message?.includes("GoogleGenerativeAI Error") || err?.message?.includes("503") || err?.message?.includes("fetch");
+      const isGeminiError = err?.message?.includes("AI servers are currently busy") || err?.message?.includes("GoogleGenerativeAI Error") || err?.message?.includes("503");
       
       toast({
         title: isGeminiError ? "Server Error" : "Notice",
-        description: isGeminiError ? "Our AI servers are currently busy due to high demand. Please try again in a few moments." : (err.message || "Something went wrong."),
+        description: err.message || "Something went wrong.",
         variant: "default",
         action: isGeminiError ? (
           <ToastAction altText="Try again" onClick={() => generateMutation.mutate()}>

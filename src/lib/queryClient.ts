@@ -126,6 +126,10 @@ Guidelines:
     return new Response(JSON.stringify({ error: "Route not found" }), { status: 404 });
   } catch (error: any) {
     console.error("API Error", error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    let errorMessage = error.message || "Unknown error";
+    if (errorMessage.includes("GoogleGenerativeAI") || errorMessage.includes("503") || errorMessage.includes("fetch")) {
+      errorMessage = "Our AI servers are currently busy due to high demand. Please try again in a few moments.";
+    }
+    return new Response(JSON.stringify({ error: errorMessage, isGeminiError: true }), { status: 500 });
   }
 }
