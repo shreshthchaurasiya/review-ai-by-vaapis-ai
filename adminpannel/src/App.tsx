@@ -27,9 +27,12 @@ interface Coupon {
 interface BusinessAuditData {
   id: string;
   name: string;
+  email?: string;
   plan: string;
   planStartDate: string;
   aiCount: number;
+  category?: string;
+  googleReviewUrl?: string;
 }
 
 function App() {
@@ -100,9 +103,12 @@ function App() {
         logs.push({
           id: doc.id,
           name: data.name || 'Unnamed',
+          email: data.email || 'Not Provided',
           plan: data.plan || 'free',
           planStartDate: data.planStartDate || new Date().toISOString(),
-          aiCount: (data.dailyAiCount || 0) + (data.monthlyAiCount || 0)
+          aiCount: (data.dailyAiCount || 0) + (data.monthlyAiCount || 0),
+          category: data.category || 'N/A',
+          googleReviewUrl: data.googleReviewUrl || ''
         });
       });
 
@@ -290,6 +296,12 @@ function App() {
         >
           <Tag size={20} /> Coupons
         </button>
+        <button 
+          onClick={() => setActiveTab('customers')}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'customers' ? 'bg-[#F5F3FF] text-[#6D28D9]' : 'text-gray-600 hover:bg-gray-50'}`}
+        >
+          <Users size={20} /> Customers
+        </button>
         
         <div className="mt-auto">
           <button 
@@ -445,6 +457,52 @@ function App() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        ) : activeTab === 'customers' ? (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Customers & Businesses</h1>
+            </div>
+            
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 font-medium whitespace-nowrap">
+                    <tr>
+                      <th className="py-4 px-6">ID (UID)</th>
+                      <th className="py-4 px-6">Business Name</th>
+                      <th className="py-4 px-6">Email</th>
+                      <th className="py-4 px-6">Plan</th>
+                      <th className="py-4 px-6">Join Date</th>
+                      <th className="py-4 px-6">Category</th>
+                      <th className="py-4 px-6">AI Usage</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {businessesLog.map((log) => (
+                      <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="py-4 px-6 text-gray-400 font-mono text-xs">{log.id}</td>
+                        <td className="py-4 px-6 font-medium text-gray-900">{log.name}</td>
+                        <td className="py-4 px-6 text-gray-600">{log.email}</td>
+                        <td className="py-4 px-6">
+                          <span className={`px-2 py-1 rounded-md text-xs font-bold ${log.plan === 'pro' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
+                            {log.plan.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-gray-500">{new Date(log.planStartDate).toLocaleDateString()}</td>
+                        <td className="py-4 px-6 text-gray-500 capitalize">{log.category || 'N/A'}</td>
+                        <td className="py-4 px-6 text-gray-500">{log.aiCount} req</td>
+                      </tr>
+                    ))}
+                    {businessesLog.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-gray-500">No customers found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         ) : null}

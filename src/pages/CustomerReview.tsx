@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@/hooks/use-firestore";
 import { apiRequest } from "@/lib/queryClient";
 import { Copy, ExternalLink, Check, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 interface PublicBusiness {
   id: string;
@@ -84,10 +85,17 @@ export default function CustomerReview() {
     },
     onError: (err: any) => {
       setStep("high-form");
+      const isGeminiError = err?.message?.includes("GoogleGenerativeAI Error") || err?.message?.includes("503") || err?.message?.includes("fetch");
+      
       toast({
-        title: "Notice",
-        description: err.message || "Something went wrong.",
+        title: isGeminiError ? "Server Error" : "Notice",
+        description: isGeminiError ? "Our AI servers are currently busy due to high demand. Please try again in a few moments." : (err.message || "Something went wrong."),
         variant: "default",
+        action: isGeminiError ? (
+          <ToastAction altText="Try again" onClick={() => generateMutation.mutate()}>
+            Try again
+          </ToastAction>
+        ) : undefined,
       });
       if (err.message?.toLowerCase().includes("limit reached")) {
         setIsAiDisabled(true);
