@@ -90,11 +90,60 @@ export default function BusinessPage() {
     }
   };
 
-  const downloadQR = () => {
+  const downloadQR = async () => {
+    if (!qrData?.qr) return;
+    
+    toast({ title: "Preparing QR Code...", description: "Generating your print-ready poster." });
+
+    try {
+      const template = new Image();
+      template.crossOrigin = "anonymous";
+      template.src = "/qrprint.jpg";
+      
+      const qrImg = new Image();
+      qrImg.crossOrigin = "anonymous";
+      qrImg.src = qrData.qr;
+
+      await Promise.all([
+        new Promise(resolve => { template.onload = resolve; }),
+        new Promise(resolve => { qrImg.onload = resolve; })
+      ]);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = template.width; // Should be 1024
+      canvas.height = template.height; // Should be 1536
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Draw the background poster
+      ctx.drawImage(template, 0, 0);
+
+      // Mathematically calculate the position to fit perfectly inside the purple box
+      // Given 1024x1536, the box is centered horizontally.
+      const qrSize = 360; // Reduced to fit completely inside with padding
+      const qrX = (canvas.width - qrSize) / 2; // Centers horizontally perfectly
+      const qrY = 635; // Perfect Y-coordinate for top padding inside the box
+
+      // Draw the QR code inside the box
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+      const finalImageUrl = canvas.toDataURL("image/jpeg", 1.0);
+      const a = document.createElement("a");
+      a.href = finalImageUrl;
+      a.download = `${name || "ReviewAI"}-Standee-QR.jpg`;
+      a.click();
+      
+      toast({ title: "Success", description: "Poster downloaded successfully!" });
+    } catch (error) {
+      toast({ title: "Download Failed", description: "Could not generate the poster.", variant: "destructive" });
+    }
+  };
+
+  const downloadRawQR = () => {
     if (!qrData?.qr) return;
     const a = document.createElement("a");
     a.href = qrData.qr;
-    a.download = `${name || "reviewai"}-qr.png`;
+    a.download = `${name || "reviewai"}-qr-only.png`;
     a.click();
   };
 
@@ -133,22 +182,31 @@ export default function BusinessPage() {
                   </div>
                 )}
 
-                <div className="flex w-full gap-2">
+                <div className="flex flex-col w-full gap-2">
+                  <div className="flex w-full gap-2">
+                    <button
+                      onClick={downloadQR}
+                      disabled={!qrData?.qr}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#ECECF2] text-sm font-medium text-[#6D28D9] hover:bg-[#F5F3FF] active:bg-[#F5F3FF] transition-colors disabled:opacity-40"
+                      data-testid="button-download-qr"
+                    >
+                      <Download size={15} /> Download Poster
+                    </button>
+                    <button
+                      onClick={copyLink}
+                      disabled={!qrData?.url}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#ECECF2] text-sm font-medium text-[#6D28D9] hover:bg-[#F5F3FF] active:bg-[#F5F3FF] transition-colors disabled:opacity-40"
+                      data-testid="button-copy-link"
+                    >
+                      {copied ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy link</>}
+                    </button>
+                  </div>
                   <button
-                    onClick={downloadQR}
+                    onClick={downloadRawQR}
                     disabled={!qrData?.qr}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#ECECF2] text-sm font-medium text-[#6D28D9] hover:bg-[#F5F3FF] active:bg-[#F5F3FF] transition-colors disabled:opacity-40"
-                    data-testid="button-download-qr"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#ECECF2] text-sm font-medium text-[#6B7280] hover:bg-gray-50 active:bg-gray-50 transition-colors disabled:opacity-40"
                   >
-                    <Download size={15} /> Download
-                  </button>
-                  <button
-                    onClick={copyLink}
-                    disabled={!qrData?.url}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#ECECF2] text-sm font-medium text-[#6D28D9] hover:bg-[#F5F3FF] active:bg-[#F5F3FF] transition-colors disabled:opacity-40"
-                    data-testid="button-copy-link"
-                  >
-                    {copied ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy link</>}
+                    <QrCode size={15} /> Only Download QR Code
                   </button>
                 </div>
 
